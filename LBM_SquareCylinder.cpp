@@ -3,56 +3,104 @@
 
 using namespace std;
 
-// Funções que serão definidas posteriormente
+// Função boundary
+void boundary(int nx, int ny, vector<vector<vector<double>>>& f, double uo, vector<vector<double>>& rho) {
+    // Right hand boundary
+    for (int j = 0; j < ny; ++j) {
+        f[nx-1][j][2] = f[nx-2][j][2];
+        f[nx-1][j][6] = f[nx-2][j][6];
+        f[nx-1][j][5] = f[nx-2][j][5];
+    }
+
+    // Bottom and top boundary, bounce back
+    for (int i = 0; i < nx; ++i) {
+        f[i][0][1] = f[i][0][3];
+        f[i][0][4] = f[i][0][6];
+        f[i][0][5] = f[i][0][7];
+        f[i][ny-1][3] = f[i][ny-1][1];
+        f[i][ny-1][6] = f[i][ny-1][4];
+        f[i][ny-1][7] = f[i][ny-1][5];
+    }
+
+    // Left boundary, velocity is given= uo
+    for (int j = 1; j < ny-1; ++j) {
+        f[0][j][0] = f[0][j][2] + 2.0 * rho[0][j] * uo / 3.0;
+        f[0][j][4] = f[0][j][6] - 0.5 * (f[0][j][1] - f[0][j][3]) + rho[0][j] * uo / 6.0;
+        f[0][j][7] = f[0][j][5] + 0.5 * (f[0][j][1] - f[0][j][3]) + rho[0][j] * uo / 6.0;
+    }
+}
+
+// Função collition
 void collition(int nx, int ny, vector<vector<double>>& u, vector<vector<double>>& v,
                vector<int>& cx, vector<int>& cy, double omega,
-               vector<vector<vector<double>>>& f, vector<vector<double>>& rho);
+               vector<vector<vector<double>>>& f, vector<vector<double>>& rho) {
+    double t1, t2;
+    vector<vector<vector<double>>> feq(nx, vector<vector<double>>(ny, vector<double>(9, 0.0)));
 
-void stream(int nx, int ny, vector<vector<vector<double>>>& f);
+    for (int j = 0; j < ny; ++j) {
+        for (int i = 0; i < nx; ++i) {
+            t1 = u[i][j] * u[i][j] + v[i][j] * v[i][j];
+            for (int k = 0; k < 9; ++k) {
+                t2 = u[i][j] * cx[k] + v[i][j] * cy[k];
+                feq[i][j][k] = rho[i][j] * w[k] * (1.0 + 3.0 * t2 + 4.5 * t2 * t2 - 1.5 * t1);
+                f[i][j][k] = (1.0 - omega) * f[i][j][k] + omega * feq[i][j][k];
+            }
+        }
+    }
+}
+// Função obstc
+void obstc(int nx, int ny, vector<vector<vector<double>>>& f, double uo, vector<vector<double>>& rho) {
+    int nxb = (nx - 1) / 5;
+    int nxe = nxb + 10;
+    int nyb = ((ny - 1) - 10) / 2;
+    int nye = nyb + 10;
 
-void boundary(int nx, int ny, vector<vector<vector<double>>>& f, double uo,
-              vector<vector<double>>& rho);
+    // Replace at the entrance, Back Fase Flow
+    for (int i = nxb; i <= nxe; ++i) {
+        f[i][nyb][3] = f[i][nyb][1];
+        f[i][nyb][7] = f[i][nyb][5];
+        f[i][nyb][6] = f[i][nyb][8];
+        f[i][nye][1] = f[i][nye][3];
+        f[i][nye][5] = f[i][nye][7];
+        f[i][nye][8] = f[i][nye][6];
+    }
 
-void obstc(int nx, int ny, vector<vector<vector<double>>>& f, double uo,
-           vector<vector<double>>& rho);
+    // Bottom and top boundary, bounce back
+    for (int j = nyb; j <= nye; ++j) {
+        f[nxb][j][2] = f[nxb][j][4];
+        f[nxb][j][7] = f[nxb][j][5];
+        f[nxb][j][6] = f[nxb][j][8];
+        f[nxe][j][4] = f[nxe][j][2];
+        f[nxe][j][5] = f[nxe][j][7];
+        f[nxe][j][8] = f[nxe][j][6];
+    }
 
+    // Set u and v to 0 inside the obstacle
+    for (int i = nxb; i <= nxe; ++i) {
+        for (int j = nyb; j <= nye; ++j) {
+            u[i][j] = 0.0;
+            v[i][j] = 0.0;
+        }
+    }
+}
+
+// Função ruv
 void ruv(int nx, int ny, vector<vector<vector<double>>>& f,
-         vector<vector<double>>& rho, vector<vector<double>>& u, vector<vector<double>>& v);
+         vector<vector<double>>& rho, vector<vector<double>>& u, vector<vector<double>>& v) {
+    // Calcular a densidade rho
+    for (int i = 0; i < nx; ++i) {
+        for (int j = 0; j < ny; ++j) {
+            rho[i][j] = f[i][j][0] + f[i][j][1] + f[i][j][2] + f[i][j][3] + f[i][j][4]
+                      + f[i][j][5] + f[i][j][6] + f[i][j][7] + f[i][j][8];
+        }
+    }
 
 // Função para salvar os resultados em um arquivo de texto
 void result(int nx, int ny, vector<double>& x, vector<double>& y,
             vector<vector<double>>& u, vector<vector<double>>& v, double uo,
             vector<vector<double>>& rho, vector<double>& count, vector<double>& utim) {
     // Nome do arquivo onde os resultados serão salvos
-    string filename = "resultados.txt";
-
-    // Abre o arquivo para escrita
-    ofstream outfile(filename);
-
-    if (!outfile.is_open()) {
-        cerr << "Erro ao abrir o arquivo " << filename << " para escrita." << endl;
-        return;
-    }
-
-    // Escreve os resultados no arquivo
-    outfile << "Resultados da simulação:" << endl;
-    outfile << "Contagem de iterações:" << endl;
-    for (int i = 1; i <= 10; ++i) {  // Escrevendo as primeiras 10 iterações
-        outfile << "Iteração " << i << ": " << count[i] << ", Rho médio: " << utim[i] << endl;
-    }
-
-    // Exemplo de escrita dos dados de u no arquivo
-    outfile << endl << "Exemplo de dados de u:" << endl;
-    for (int i = 0; i < nx; ++i) {
-        for (int j = 0; j < ny; ++j) {
-            outfile << "u[" << i << "][" << j << "] = " << u[i][j] << endl;
-        }
-    }
-
-    // Fechar o arquivo
-    outfile.close();
-
-    cout << "Resultados salvos em " << filename << endl;
+    string filename = "results.txt";
 }
 
 int main() {
