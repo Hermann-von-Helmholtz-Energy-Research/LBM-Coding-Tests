@@ -1,24 +1,24 @@
 
-// Constants
+/* Constants */
 const unsigned int scale = 1;
 const unsigned int NX = 32 * scale;
 const unsigned int NY = NX;
 
-// Lattice
-const unsigned int ndir = 9; // D2Q9
+/* Lattice */
+const unsigned int ndir = 9; /* D2Q9 */
 const size_t mem_size_ndir = sizeof(double) * NX * NY * ndir;
 
-// Main
+/* Main */
 int main (int argc, char* argv[]){
-    // allocate memory
+    /* allocate memory */
     double *f1 = (double *) malloc(mem_size_ndir);
 
-    // execute
+    /* execute */
 
-    // deallocate memory
+    /* deallocate memory */
     free(f1);
 
-    // return
+    /* return */
     return 0;
 }
 
