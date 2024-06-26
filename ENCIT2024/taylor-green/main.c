@@ -6,7 +6,7 @@ const unsigned int NY = NX;
 
 /* Lattice */
 const unsigned int ndir = 9; /* D2Q9 */
-const size_t mem_size_ndir = sizeof(double) * NX * NY * ndir;
+const unsigned long int mem_size_ndir = sizeof(double) * NX * NY * ndir;
 
 /* Main */
 int main (int argc, char* argv[]){
