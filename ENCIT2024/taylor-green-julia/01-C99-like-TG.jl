@@ -206,7 +206,7 @@ function main(argc::Integer = length(ARGS), argv::Vector{String} = ARGS)::Intege
         collide(𝑔, ρ, 𝑢, 𝑣)
         # (𝑓, 𝑔) swapping
         𝑓, 𝑔 = 𝑔, 𝑓
-        # DEBUG
+        # PROGRESS
         # if (n % 128 == 0) || (n == NSTEPS)
         #     if (n % 8192 == 0) || (n == NSTEPS)
         #         println(format(" ({1:6d}: {2:5.1f}%)", n, 𝕋(100n)/𝕋(NSTEPS)))
