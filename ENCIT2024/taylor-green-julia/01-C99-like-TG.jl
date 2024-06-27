@@ -183,6 +183,8 @@ end
 #                                             Main                                             #
 #----------------------------------------------------------------------------------------------#
 
+using Format
+
 function main(argc::Integer = length(ARGS), argv::Vector{String} = ARGS)::Integer
     # Allocate memory, without initialization
     𝑓 = Vector{𝕋}(undef, amountof_vector)
@@ -205,13 +207,13 @@ function main(argc::Integer = length(ARGS), argv::Vector{String} = ARGS)::Intege
         # (𝑓, 𝑔) swapping
         𝑓, 𝑔 = 𝑔, 𝑓
         # DEBUG
-        if (n % 128 == 0) || (n == NSTEPS)
-            if (n % 8192 == 0) || (n == NSTEPS)
-                println(" ($n)")
-            else
-                print(".")
-            end
-        end 
+        # if (n % 128 == 0) || (n == NSTEPS)
+        #     if (n % 8192 == 0) || (n == NSTEPS)
+        #         println(format(" ({1:6d}: {2:5.1f}%)", n, 𝕋(100n)/𝕋(NSTEPS)))
+        #     else
+        #         print(".")
+        #     end
+        # end 
     end
     #--------------------------------------------------------------------------#
     #    Memory de-allocation is automatically performed by julia's garbage    #
