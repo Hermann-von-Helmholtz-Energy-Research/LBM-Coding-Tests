@@ -58,7 +58,27 @@ field_index(x::UInt, y::UInt, d::UInt = ndir) = NX * (NY * d + y) + x
 `taylor_green`\n
 Function to compute the exact solution for Taylor-Green vortex decay
 """
-function taylor_green(t::UInt, x::UInt, y::Uint, )
+function taylor_green(t::UInt, x::UInt, y::Uint)::NTuple{3, 𝕋}
+    kx = 𝕋(2.0 * π) / NX
+    ky = 𝕋(2.0 * π) / NY
+    td = 𝕋(1.0) / (nu * (kx*kx + ky*ky))
+    X  = 𝕋(x + 0.5)
+    Y  = 𝕋(y + 0.5)
+    ux = - u_max * √(ky / kx) * cos(kx * X) * sin(ky * Y) * exp(-𝕋(t) / td)
+    uy = + u_max * √(kx / ky) * sin(kx * X) * cos(ky * Y) * exp(-𝕋(t) / td)
+    P  = - 𝕋(0.25) * rho0 * u_max * u_max * ( (ky / kx) * cos(2kx * X)
+                                             +(kx / ky) * sin(2ky * Y) )
+    rh = rho0 + 𝕋(3.0) * P
+    return (rh, ux, uy)
+end
+
+function taylor_green(t::UInt, ρ::Vector{𝕋}, 𝑢::Vector{𝕋}, 𝑣::Vector{𝕋})
+    for j in 1:NY
+        for i in 1:NX
+            𝑖 = scalar_index(i, j)
+            ρ[𝑖], 𝑢[𝑖], 𝑣[𝑖] = taylor_green(t, i, j)
+        end
+    end
 end
 
 
@@ -73,14 +93,12 @@ function collide end
 #----------------------------------------------------------------------------------------------#
 
 function main(argc::Integer = length(ARGS), argv::Vector{String} = ARGS)::Integer
-    # Declare the vectors, or 1D arrays
-    # Julia's `Base.Array`'s are of variable size & dimension and
-    # `Vector` ≡ `Array{T, 1} where T`
-    𝑓 = Vector{𝕋}
-    𝑔 = Vector{𝕋}
-    ρ = Vector{𝕋}
-    𝑢 = Vector{𝕋}
-    𝑣 = Vector{𝕋}
+    # Allocate memory, without initialization
+    𝑓 = Vector{𝕋}(undef, amountof_vector)
+    𝑔 = Vector{𝕋}(undef, amountof_vector)
+    ρ = Vector{𝕋}(undef, amountof_scalar)
+    𝑢 = Vector{𝕋}(undef, amountof_scalar)
+    𝑣 = Vector{𝕋}(undef, amountof_scalar)
     # Initialize ρ, 𝑢, 𝑣 with macroscopic flow
     taylor_green(zero(𝕋), ρ, 𝑢, 𝑣)
     # Initialize 𝑓 at equilibrium
