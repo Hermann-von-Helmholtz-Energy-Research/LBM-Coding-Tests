@@ -13,8 +13,8 @@ const chunk             = UInt(32)                      # Hardcoded in the ref. 
 const NX                = UInt(scale * chunk)
 const NY                = NX
 const ndir              = UInt(9)
-const amountof_scalar   = Int(NX * NY)
-const amountof_vector   = Int(amountof_scalar * ndir)
+const amountof_scalar   = UInt(NX * NY)
+const amountof_vector   = UInt(amountof_scalar * ndir)
 const mem_size_scalar   = UInt(amountof_scalar * sizeof(𝕋))
 const mem_size_vector   = UInt(mem_size_scalar * ndir)  # Optimized w/respect to ref. C99 code
 const w0                = 𝕋(4.0 /  9.0)     # zero velocity weight
@@ -35,7 +35,7 @@ const u_max             = 𝕋(0.04 / scale)
 const rho0              = 𝕋(1.0)
 
 # Simulation time steps
-const NSTEPS            = UInt(204800 / scale / scale)
+const NSTEPS            = UInt(round(204800 / scale / scale))
 
 
 #----------------------------------------------------------------------------------------------#
@@ -58,7 +58,7 @@ field_index(x::UInt, y::UInt, d::UInt = ndir) = NX * (NY * d + y) + x
 `taylor_green`\n
 Function to compute the exact solution for Taylor-Green vortex decay
 """
-function taylor_green(t::UInt, x::UInt, y::Uint)::NTuple{3, 𝕋}
+function taylor_green(t::𝕋, x::UInt, y::UInt)::NTuple{3, 𝕋}
     kx = 𝕋(2.0 * π) / NX
     ky = 𝕋(2.0 * π) / NY
     td = 𝕋(1.0) / (nu * (kx*kx + ky*ky))
@@ -72,17 +72,39 @@ function taylor_green(t::UInt, x::UInt, y::Uint)::NTuple{3, 𝕋}
     return (rh, ux, uy)
 end
 
-function taylor_green(t::UInt, ρ::Vector{𝕋}, 𝑢::Vector{𝕋}, 𝑣::Vector{𝕋})
-    for j in 1:NY
-        for i in 1:NX
+function taylor_green(t::𝕋, ρ::Vector{𝕋}, 𝑢::Vector{𝕋}, 𝑣::Vector{𝕋})
+    for j in UInt(1):NY
+        for i in UInt(1):NX
             𝑖 = scalar_index(i, j)
             ρ[𝑖], 𝑢[𝑖], 𝑣[𝑖] = taylor_green(t, i, j)
         end
     end
 end
 
+"""
+`init_equilibrium(𝑓::Vector{𝕋}, ρ::Vector{𝕋}, 𝑢::Vector{𝕋}, 𝑣::Vector{𝕋})`\n
+Function to initialise an equilibrium particle population `f` with provided `ρ, 𝑢, 𝑣`
+macroscopic fields.
+"""
+function init_equilibrium(𝑓::Vector{𝕋}, ρ::Vector{𝕋}, 𝑢::Vector{𝕋}, 𝑣::Vector{𝕋})
+    for 𝑦 in UInt(1):NY
+        for 𝑥 in UInt(1):NX
+            i = scalar_index(𝑥, 𝑦)
+            ϱ, 𝚞, 𝚟 = ρ[i], 𝑢[i], 𝑣[i]
+            𝘂𝘂 = 𝚞 * 𝚞 + 𝚟 * 𝚟      # Optimization absent in the ref. C99 code
+            for 𝑖 in UInt(1):ndir
+                ξ𝘂 = 𝕋(dirx[𝑖] * 𝚞 + diry[𝑖] * 𝚟)
+                𝑓[field_index(𝑥, 𝑦, 𝑖)] = wi[𝑖] * ϱ * (
+                    + 𝕋(1.0)
+                    + 𝕋(3.0) * ξ𝘂
+                    + 𝕋(4.5) * ξ𝘂 * ξ𝘂
+                    - 𝕋(1.5) * 𝘂𝘂
+                )
+            end
+        end
+    end
+end
 
-function init_equilibrium end
 function stream end
 function compute_rho_u end
 function collide end
@@ -114,6 +136,10 @@ function main(argc::Integer = length(ARGS), argv::Vector{String} = ARGS)::Intege
         # (𝑓, 𝑔) swapping
         𝑓, 𝑔 = 𝑔, 𝑓
     end
+    #--------------------------------------------------------------------------#
+    #    Memory de-allocation is automatically performed by julia's garbage    #
+    #        collector when the 𝑓, 𝑔, ρ, 𝑢, 𝑣 Vectors are out of scope.        #
+    #--------------------------------------------------------------------------#
     # Return
     return 0
 end
