@@ -148,7 +148,35 @@ function compute_rho_u(𝑓::Vector{𝕋}, ρ::Vector{𝕋}, 𝑢::Vector{𝕋},
     end
 end
 
-function collide end
+"""
+`collide(𝑓::Vector{𝕋}, ρ::Vector{𝕋}, 𝑢::Vector{𝕋}, 𝑣::Vector{𝕋})::Nothing`\n
+Function that performs the collision operation on the particle populations using pre-computed
+density and velocity values.
+"""
+function collide(𝑓::Vector{𝕋}, ρ::Vector{𝕋}, 𝑢::Vector{𝕋}, 𝑣::Vector{𝕋})::Nothing
+    iτ = inv(tau)         # inverse:        1/τ
+    cτ = one(𝕋) - invτ    # complement: 1 - 1/τ
+    for 𝑦 in UInt(1):NY
+        for 𝑥 in UInt(1):NX
+            # Initialize
+            𝑗 = scalar_index(𝑥, 𝑦)
+            ϱ, 𝚞, 𝚟 = ρ[𝑗], 𝑢[𝑗], 𝑣[𝑗]
+            𝘂𝘂 = 𝚞 * 𝚞 + 𝚟 * 𝚟      # Optimization absent in the ref. C99 code
+            for 𝑖 in UInt(1):ndir
+                ξ𝘂 = 𝕋(dirx[𝑖] * 𝚞 + diry[𝑖] * 𝚟)
+                # Equilibrium
+                𝑓eq = wi[𝑖] * ϱ * (
+                    + 𝕋(1.0)
+                    + 𝕋(3.0) * ξ𝘂
+                    + 𝕋(4.5) * ξ𝘂 * ξ𝘂
+                    - 𝕋(1.5) * 𝘂𝘂
+                )
+                # Relax to equilibrium
+                𝑓[field_index(𝑥, 𝑦, 𝑖)] = cτ * 𝑓[field_index(𝑥, 𝑦, 𝑖)] + iτ * 𝑓eq
+            end
+        end
+    end
+end
 
 
 #----------------------------------------------------------------------------------------------#
