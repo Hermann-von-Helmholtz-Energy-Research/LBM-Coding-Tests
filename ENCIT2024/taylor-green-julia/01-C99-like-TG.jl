@@ -54,7 +54,14 @@ Returns the linear index that corresponds to the 2D position [x, y] for lattice 
 """
 field_index(x::UInt, y::UInt, d::UInt = ndir) = NX * (NY * d + y) + x
 
-function taylor_green end
+"""
+`taylor_green`\n
+Function to compute the exact solution for Taylor-Green vortex decay
+"""
+function taylor_green(t::UInt, x::UInt, y::Uint, )
+end
+
+
 function init_equilibrium end
 function stream end
 function compute_rho_u end
@@ -67,13 +74,13 @@ function collide end
 
 using StaticArrays
 
-function main()::Integer
+function main(argc::Integer = length(ARGS), argv::Vector{String} = ARGS)::Integer
     # Allocate (initialized) memory
-    𝑓 = @SVector zeros(amountof_vector)
-    𝑔 = @SVector zeros(amountof_vector)
-    ρ = @SVector zeros(amountof_scalar)
-    𝑢 = @SVector zeros(amountof_scalar)
-    𝑣 = @SVector zeros(amountof_scalar)
+    𝑓 = @SVector zeros(𝕋, amountof_vector)
+    𝑔 = @SVector zeros(𝕋, amountof_vector)
+    ρ = @SVector zeros(𝕋, amountof_scalar)
+    𝑢 = @SVector zeros(𝕋, amountof_scalar)
+    𝑣 = @SVector zeros(𝕋, amountof_scalar)
     # Initialize ρ, 𝑢, 𝑣 with macroscopic flow
     taylor_green(zero(𝕋), ρ, 𝑢, 𝑣)
     # Initialize 𝑓 at equilibrium
