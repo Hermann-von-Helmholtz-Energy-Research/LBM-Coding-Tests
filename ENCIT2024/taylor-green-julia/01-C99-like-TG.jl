@@ -46,13 +46,13 @@ const NSTEPS            = UInt(round(204800 / scale / scale))
 `scalar_index(x::UInt, y::UInt)::UInt`\n
 Returns the linear index that corresponds to the 2D position [x, y] for SCALARS.
 """
-scalar_index(x::UInt, y::UInt)::UInt = NX * y + x
+scalar_index(x::UInt, y::UInt)::UInt = NX * (y - 1) + x
 
 """
-`field_index(x::UInt, y::UInt, d::UInt = ndir)::UInt`\n
+`field_index(x::UInt, y::UInt, d::UInt)::UInt`\n
 Returns the linear index that corresponds to the 2D position [x, y] for lattice FIELDS.
 """
-field_index(x::UInt, y::UInt, d::UInt = ndir)::UInt = NX * (NY * d + y) + x
+field_index(x::UInt, y::UInt, d::UInt)::UInt = ndir * (NX * (y - 1) + x - 1) + d
 
 """
 `taylor_green`\n
@@ -204,6 +204,14 @@ function main(argc::Integer = length(ARGS), argv::Vector{String} = ARGS)::Intege
         collide(𝑔, ρ, 𝑢, 𝑣)
         # (𝑓, 𝑔) swapping
         𝑓, 𝑔 = 𝑔, 𝑓
+        # DEBUG
+        if (n % 128 == 0) || (n == NSTEPS)
+            if (n % 8192 == 0) || (n == NSTEPS)
+                println(" ($n)")
+            else
+                print(".")
+            end
+        end 
     end
     #--------------------------------------------------------------------------#
     #    Memory de-allocation is automatically performed by julia's garbage    #
