@@ -115,8 +115,8 @@ function stream(𝑓::Vector{𝕋}, 𝑔::Vector{𝕋})::Nothing
         for 𝑥 in UInt(1):NX
             for 𝑖 in UInt(1):ndir
                 # "from" indices, enforcing periodicity
-                𝑝 = (NX + 𝑥 - dirx[𝑖]) % NX     # NX is added as to guarantee positivity
-                𝑞 = (NY + 𝑦 - diry[𝑖]) % NY     # NY is added as to guarantee positivity
+                𝑝 = (NX + 𝑥 - dirx[𝑖]) % NX + UInt(1)   # NX is added as to guarantee positivity
+                𝑞 = (NY + 𝑦 - diry[𝑖]) % NY + UInt(1)   # NY is added as to guarantee positivity
                 # Streaming from 𝑓 into 𝑔
                 𝑔[field_index(𝑥, 𝑦, 𝑖)] = 𝑓[field_index(𝑝, 𝑞, 𝑖)]
             end
