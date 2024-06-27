@@ -1,8 +1,12 @@
+#----------------------------------------------------------------------------------------------#
+#                                        Case Constants                                        #
+#----------------------------------------------------------------------------------------------#
+
 # Precision parameters
 const 𝕋                 = Float64                       # Absent in the ref. C99 code
 
 # Lattice constants
-const scale             = UInt(1)
+const scale             = UInt(1) << 0                  # 1 << n = 2^n
 const chunk             = UInt(32)                      # Hardcoded in the ref. C99 code
 const NX                = UInt(scale * chunk)
 const NY                = NX
@@ -25,3 +29,26 @@ const u_max             = 𝕋(0.04 / scale)
 
 # Fluid density
 const rho0              = 𝕋(1.0)
+
+# Simulation time steps
+const NSTEPS            = UInt(204800 / scale / scale)
+
+
+#----------------------------------------------------------------------------------------------#
+#                                     Auxiliary Functions                                      #
+#----------------------------------------------------------------------------------------------#
+
+"""
+`scalar_index(x::UInt, y::UInt)`\n
+Returns the linear index that corresponds to the 2D position [x, y] for SCALARS.
+"""
+scalar_index(x::UInt, y::UInt) = NX * y + x
+
+"""
+`field_index(x::UInt, y::UInt, d::UInt = ndir)`\n
+Returns the linear index that corresponds to the 2D position [x, y] for lattice FIELDS.
+"""
+field_index(x::UInt, y::UInt, d::UInt = ndir) = NX * (NY * d + y) + x
+
+
+
