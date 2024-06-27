@@ -154,8 +154,8 @@ Function that performs the collision operation on the particle populations using
 density and velocity values.
 """
 function collide(𝑓::Vector{𝕋}, ρ::Vector{𝕋}, 𝑢::Vector{𝕋}, 𝑣::Vector{𝕋})::Nothing
-    iτ = inv(tau)         # inverse:        1/τ
-    cτ = one(𝕋) - invτ    # complement: 1 - 1/τ
+    iτ = inv(tau)       # inverse:        1/τ
+    cτ = one(𝕋) - iτ    # complement: 1 - 1/τ
     for 𝑦 in UInt(1):NY
         for 𝑥 in UInt(1):NX
             # Initialize
