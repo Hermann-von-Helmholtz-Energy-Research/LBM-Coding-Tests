@@ -43,16 +43,16 @@ const NSTEPS            = UInt(round(204800 / scale / scale))
 #----------------------------------------------------------------------------------------------#
 
 """
-`scalar_index(x::UInt, y::UInt)`\n
+`scalar_index(x::UInt, y::UInt)::UInt`\n
 Returns the linear index that corresponds to the 2D position [x, y] for SCALARS.
 """
-scalar_index(x::UInt, y::UInt) = NX * y + x
+scalar_index(x::UInt, y::UInt)::UInt = NX * y + x
 
 """
-`field_index(x::UInt, y::UInt, d::UInt = ndir)`\n
+`field_index(x::UInt, y::UInt, d::UInt = ndir)::UInt`\n
 Returns the linear index that corresponds to the 2D position [x, y] for lattice FIELDS.
 """
-field_index(x::UInt, y::UInt, d::UInt = ndir) = NX * (NY * d + y) + x
+field_index(x::UInt, y::UInt, d::UInt = ndir)::UInt = NX * (NY * d + y) + x
 
 """
 `taylor_green`\n
@@ -72,7 +72,7 @@ function taylor_green(t::𝕋, x::UInt, y::UInt)::NTuple{3, 𝕋}
     return (rh, ux, uy)
 end
 
-function taylor_green(t::𝕋, ρ::Vector{𝕋}, 𝑢::Vector{𝕋}, 𝑣::Vector{𝕋})
+function taylor_green(t::𝕋, ρ::Vector{𝕋}, 𝑢::Vector{𝕋}, 𝑣::Vector{𝕋})::Nothing
     for j in UInt(1):NY
         for i in UInt(1):NX
             𝑖 = scalar_index(i, j)
@@ -82,11 +82,11 @@ function taylor_green(t::𝕋, ρ::Vector{𝕋}, 𝑢::Vector{𝕋}, 𝑣::Vecto
 end
 
 """
-`init_equilibrium(𝑓::Vector{𝕋}, ρ::Vector{𝕋}, 𝑢::Vector{𝕋}, 𝑣::Vector{𝕋})`\n
+`init_equilibrium(𝑓::Vector{𝕋}, ρ::Vector{𝕋}, 𝑢::Vector{𝕋}, 𝑣::Vector{𝕋})::Nothing`\n
 Function to initialise an equilibrium particle population `f` with provided `ρ, 𝑢, 𝑣`
 macroscopic fields.
 """
-function init_equilibrium(𝑓::Vector{𝕋}, ρ::Vector{𝕋}, 𝑢::Vector{𝕋}, 𝑣::Vector{𝕋})
+function init_equilibrium(𝑓::Vector{𝕋}, ρ::Vector{𝕋}, 𝑢::Vector{𝕋}, 𝑣::Vector{𝕋})::Nothing
     for 𝑦 in UInt(1):NY
         for 𝑥 in UInt(1):NX
             i = scalar_index(𝑥, 𝑦)
@@ -105,8 +105,49 @@ function init_equilibrium(𝑓::Vector{𝕋}, ρ::Vector{𝕋}, 𝑢::Vector{�
     end
 end
 
-function stream end
-function compute_rho_u end
+"""
+`stream(𝑓::Vector{𝕋}, 𝑔::Vector{𝕋})::Nothing`\n
+Function that performs streaming of the populations in a fully periodic domain, reading from 𝑓
+and storing to 𝑔.
+"""
+function stream(𝑓::Vector{𝕋}, 𝑔::Vector{𝕋})::Nothing
+    for 𝑦 in UInt(1):NY
+        for 𝑥 in UInt(1):NX
+            for 𝑖 in UInt(1):ndir
+                # "from" indices, enforcing periodicity
+                𝑝 = (NX + 𝑥 - dirx[𝑖]) % NX     # NX is added as to guarantee positivity
+                𝑞 = (NY + 𝑦 - diry[𝑖]) % NY     # NY is added as to guarantee positivity
+                # Streaming from 𝑓 into 𝑔
+                𝑔[field_index(𝑥, 𝑦, 𝑖)] = 𝑓[field_index(𝑝, 𝑞, 𝑖)]
+            end
+        end
+    end
+end
+
+"""
+`compute_rho_u(𝑓::Vector{𝕋}, ρ::Vector{𝕋}, 𝑢::Vector{𝕋}, 𝑣::Vector{𝕋})::Nothing`\n
+Function that computes macroscopics from mesoscopics.
+"""
+function compute_rho_u(𝑓::Vector{𝕋}, ρ::Vector{𝕋}, 𝑢::Vector{𝕋}, 𝑣::Vector{𝕋})::Nothing
+    for 𝑦 in UInt(1):NY
+        for 𝑥 in UInt(1):NX
+            # Initialize
+            ϱ = zero(𝕋)
+            𝚞 = zero(𝕋)
+            𝚟 = zero(𝕋)
+            𝑗 = scalar_index(𝑥, 𝑦)
+            # Integrate
+            for 𝑖 in UInt(1):ndir
+                ϱ += 𝚏 = 𝑓[field_index(𝑥, 𝑦, 𝑖)]
+                𝚞 += dirx[𝑖] * 𝚏
+                𝚟 += diry[𝑖] * 𝚏
+            end
+            # Update
+            ρ[𝑗], 𝑢[𝑗], 𝑣[𝑗] = ϱ, 𝚞, 𝚟
+        end
+    end
+end
+
 function collide end
 
 
