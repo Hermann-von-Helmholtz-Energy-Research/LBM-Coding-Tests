@@ -72,15 +72,15 @@ function collide end
 #                                             Main                                             #
 #----------------------------------------------------------------------------------------------#
 
-using StaticArrays
-
 function main(argc::Integer = length(ARGS), argv::Vector{String} = ARGS)::Integer
-    # Allocate (initialized) memory
-    𝑓 = @SVector zeros(𝕋, amountof_vector)
-    𝑔 = @SVector zeros(𝕋, amountof_vector)
-    ρ = @SVector zeros(𝕋, amountof_scalar)
-    𝑢 = @SVector zeros(𝕋, amountof_scalar)
-    𝑣 = @SVector zeros(𝕋, amountof_scalar)
+    # Declare the vectors, or 1D arrays
+    # Julia's `Base.Array`'s are of variable size & dimension and
+    # `Vector` ≡ `Array{T, 1} where T`
+    𝑓 = Vector{𝕋}
+    𝑔 = Vector{𝕋}
+    ρ = Vector{𝕋}
+    𝑢 = Vector{𝕋}
+    𝑣 = Vector{𝕋}
     # Initialize ρ, 𝑢, 𝑣 with macroscopic flow
     taylor_green(zero(𝕋), ρ, 𝑢, 𝑣)
     # Initialize 𝑓 at equilibrium
