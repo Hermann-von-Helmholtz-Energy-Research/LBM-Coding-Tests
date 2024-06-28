@@ -59,17 +59,18 @@ function taylor_green(t::Float64, x::UInt, y::UInt)::NTuple{3, Float64}
     kx = Float64(2.0 * π) / NX
     ky = Float64(2.0 * π) / NY
     td = Float64(1.0) / (nu * (kx*kx + ky*ky))
-    X  = Float64(x + 0.5)
-    Y  = Float64(y + 0.5)
-    ux = - u_max * √(ky / kx) * cos(kx * X) * sin(ky * Y) * exp(-Float64(t) / td)
-    uy = + u_max * √(kx / ky) * sin(kx * X) * cos(ky * Y) * exp(-Float64(t) / td)
+    X  = Float64(x - NX / Float64(2.0))     # Centered vortex
+    Y  = Float64(y - NY / Float64(2.0))     # Centered vortex
+    ux = - u_max * √(ky / kx) * cos(kx * X) * sin(ky * Y) * exp(-t / td)
+    uy = + u_max * √(kx / ky) * sin(kx * X) * cos(ky * Y) * exp(-t / td)
     P  = - Float64(0.25) * rho0 * u_max * u_max * ( (ky / kx) * cos(2kx * X)
                                              +(kx / ky) * sin(2ky * Y) )
     rh = rho0 + Float64(3.0) * P
     return (rh, ux, uy)
 end
 
-function taylor_green(t::Float64, ρ::Vector{Float64}, 𝑢::Vector{Float64}, 𝑣::Vector{Float64})::Nothing
+function taylor_green(t::Float64, ρ::Vector{Float64},
+                      𝑢::Vector{Float64}, 𝑣::Vector{Float64})::Nothing
     for j in UInt(1):NY
         for i in UInt(1):NX
             𝑖 = scalar_index(i, j)
@@ -79,11 +80,13 @@ function taylor_green(t::Float64, ρ::Vector{Float64}, 𝑢::Vector{Float64}, �
 end
 
 """
-`init_equilibrium(𝑓::Vector{Float64}, ρ::Vector{Float64}, 𝑢::Vector{Float64}, 𝑣::Vector{Float64})::Nothing`\n
+`init_equilibrium(𝑓::Vector{Float64}, ρ::Vector{Float64},
+                  𝑢::Vector{Float64}, 𝑣::Vector{Float64})::Nothing`\n
 Function to initialise an equilibrium particle population `f` with provided `ρ, 𝑢, 𝑣`
 macroscopic fields.
 """
-function init_equilibrium(𝑓::Vector{Float64}, ρ::Vector{Float64}, 𝑢::Vector{Float64}, 𝑣::Vector{Float64})::Nothing
+function init_equilibrium(𝑓::Vector{Float64}, ρ::Vector{Float64},
+                          𝑢::Vector{Float64}, 𝑣::Vector{Float64})::Nothing
     for 𝑦 in UInt(1):NY
         for 𝑥 in UInt(1):NX
             i = scalar_index(𝑥, 𝑦)
@@ -94,7 +97,7 @@ function init_equilibrium(𝑓::Vector{Float64}, ρ::Vector{Float64}, 𝑢::Vect
                     + Float64(1.0)
                     + Float64(3.0) * ξ𝘂
                     + Float64(4.5) * ξ𝘂 * ξ𝘂
-                    - Float64(1.5) * 𝚞 * 𝚞 + 𝚟 * 𝚟
+                    - Float64(1.5) * (𝚞 * 𝚞 + 𝚟 * 𝚟)
                 )
             end
         end
@@ -121,10 +124,12 @@ function stream(𝑓::Vector{Float64}, 𝑔::Vector{Float64})::Nothing
 end
 
 """
-`compute_rho_u(𝑓::Vector{Float64}, ρ::Vector{Float64}, 𝑢::Vector{Float64}, 𝑣::Vector{Float64})::Nothing`\n
+`compute_rho_u(𝑓::Vector{Float64}, ρ::Vector{Float64},
+               𝑢::Vector{Float64}, 𝑣::Vector{Float64})::Nothing`\n
 Function that computes macroscopics from mesoscopics.
 """
-function compute_rho_u(𝑓::Vector{Float64}, ρ::Vector{Float64}, 𝑢::Vector{Float64}, 𝑣::Vector{Float64})::Nothing
+function compute_rho_u(𝑓::Vector{Float64}, ρ::Vector{Float64},
+                       𝑢::Vector{Float64}, 𝑣::Vector{Float64})::Nothing
     for 𝑦 in UInt(1):NY
         for 𝑥 in UInt(1):NX
             # Initialize
@@ -147,11 +152,13 @@ function compute_rho_u(𝑓::Vector{Float64}, ρ::Vector{Float64}, 𝑢::Vector{
 end
 
 """
-`collide(𝑓::Vector{Float64}, ρ::Vector{Float64}, 𝑢::Vector{Float64}, 𝑣::Vector{Float64})::Nothing`\n
+`collide(𝑓::Vector{Float64}, ρ::Vector{Float64},
+         𝑢::Vector{Float64}, 𝑣::Vector{Float64})::Nothing`\n
 Function that performs the collision operation on the particle populations using pre-computed
 density and velocity values.
 """
-function collide(𝑓::Vector{Float64}, ρ::Vector{Float64}, 𝑢::Vector{Float64}, 𝑣::Vector{Float64})::Nothing
+function collide(𝑓::Vector{Float64}, ρ::Vector{Float64},
+                 𝑢::Vector{Float64}, 𝑣::Vector{Float64})::Nothing
     iτ = Float64(2.0 / (6.0 * nu + 1.0))    # inverse
     cτ = Float64(1.0) - iτ                  # complement
     for 𝑦 in UInt(1):NY
