@@ -28,7 +28,7 @@ Host `freebird` is a
 `gcc` version
 `14.1.1` with
 `60% (default)` of swappiness, with
-`64 GiB` of hard disk swap of which
+`16 GiB` of hard disk swap of which
 `0.0 MiB (0.0%)` were in use during benchmark tests.
 
 Host `stilo` is a
