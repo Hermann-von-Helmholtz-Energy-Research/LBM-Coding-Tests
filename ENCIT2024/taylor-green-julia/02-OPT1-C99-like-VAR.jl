@@ -166,7 +166,7 @@ function collide(𝑓::Vector{𝕋}, ρ::Vector{𝕋},
         for 𝑥 in UInt(1):NX
             # Initialize
             𝑗 = scalar_index(𝑥, 𝑦)
-            ϱ = 𝚞 = 𝚟 = ρ[𝑗], 𝑢[𝑗], 𝑣[𝑗]    # (OP1)
+            ϱ, 𝚞, 𝚟 = ρ[𝑗], 𝑢[𝑗], 𝑣[𝑗]      # (OP1)
             𝘂𝘂 = 𝚞 * 𝚞 + 𝚟 * 𝚟              # (OP1)
             for 𝑖 in UInt(1):ndir
                 ξ𝘂 = 𝕋(dirx[𝑖] * 𝚞 + diry[𝑖] * 𝚟)
