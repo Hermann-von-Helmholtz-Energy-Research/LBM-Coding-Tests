@@ -4,12 +4,12 @@
 #                                        Case Constants                                        #
 #----------------------------------------------------------------------------------------------#
 
-# Simulation data type
-const 𝕋                 = Float64                 # Source optimization 1 (=SO1)
+# Simulation data type (the FP precision ℙ must be previsouly defined in the REPL session)
+const 𝕋                 = ℙ                     # Source optimization 1 (=SO1)
 
 # Lattice constants
-const scale             = UInt(1) << 0            # 1 << n = 2^n (SO1)
-const chunk             = UInt(32)                # Hardcoded in the ref. C99 code (SO1)
+const scale             = UInt(1) << 0          # 1 << n = 2^n (SO1)
+const chunk             = UInt(32)              # Hardcoded in the ref. C99 code (SO1)
 const NX                = UInt(scale * chunk)
 const NY                = NX
 const ndir              = UInt(9)
@@ -17,9 +17,9 @@ const amountof_scalar   = UInt(NX * NY)
 const amountof_vector   = UInt(NX * NY * ndir)
 const mem_size_scalar   = UInt(NX * NY * sizeof(𝕋))
 const mem_size_vector   = UInt(NX * NY * ndir * sizeof(𝕋))
-const w0                = 𝕋(4.0 /  9.0)           # zero velocity weight
-const ws                = 𝕋(1.0 /  9.0)           # size velocity weight
-const wd                = 𝕋(1.0 / 36.0)           # diag velocity weight
+const w0                = 𝕋(4.0 /  9.0)         # zero velocity weight
+const ws                = 𝕋(1.0 /  9.0)         # size velocity weight
+const wd                = 𝕋(1.0 / 36.0)         # diag velocity weight
 const wi                = (w0, ws, ws, ws, ws, wd, wd, wd, wd)
 const dirx              = (+0, +1, +0, -1, +0, +1, -1, -1, +1)
 const diry              = (+0, +0, +1, +0, -1, +1, +1, -1, -1)
@@ -138,9 +138,7 @@ function compute_rho_u(𝑓::Vector{𝕋}, ρ::Vector{𝕋},
     for 𝑦 in UInt(1):NY
         for 𝑥 in UInt(1):NX
             # Initialize
-            ϱ = zero(𝕋)
-            𝚞 = zero(𝕋)
-            𝚟 = zero(𝕋)
+            ϱ = 𝚞 = 𝚟 = zero(𝕋)             # (OP1)
             𝑗 = scalar_index(𝑥, 𝑦)
             # Integrate
             for 𝑖 in UInt(1):ndir
@@ -149,9 +147,7 @@ function compute_rho_u(𝑓::Vector{𝕋}, ρ::Vector{𝕋},
                 𝚟 += diry[𝑖] * 𝚏
             end
             # Update
-            ρ[𝑗] = ϱ
-            𝑢[𝑗] = 𝚞
-            𝑣[𝑗] = 𝚟
+            ρ[𝑗], 𝑢[𝑗], 𝑣[𝑗] = ϱ, 𝚞, 𝚟      # (OP1)
         end
     end
 end
@@ -170,10 +166,8 @@ function collide(𝑓::Vector{𝕋}, ρ::Vector{𝕋},
         for 𝑥 in UInt(1):NX
             # Initialize
             𝑗 = scalar_index(𝑥, 𝑦)
-            ϱ = ρ[𝑗]
-            𝚞 = 𝑢[𝑗]
-            𝚟 = 𝑣[𝑗]
-            𝘂𝘂 = 𝚞 * 𝚞 + 𝚟 * 𝚟          # (OP1)
+            ϱ = 𝚞 = 𝚟 = ρ[𝑗], 𝑢[𝑗], 𝑣[𝑗]    # (OP1)
+            𝘂𝘂 = 𝚞 * 𝚞 + 𝚟 * 𝚟              # (OP1)
             for 𝑖 in UInt(1):ndir
                 ξ𝘂 = 𝕋(dirx[𝑖] * 𝚞 + diry[𝑖] * 𝚟)
                 # Equilibrium
