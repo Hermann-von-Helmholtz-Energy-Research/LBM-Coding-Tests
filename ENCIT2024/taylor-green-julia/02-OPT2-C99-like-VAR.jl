@@ -27,8 +27,10 @@ const diry              = (+0, +0, +1, +0, -1, +1, +1, -1, -1)
 # Kinematic viscosity and parameter tau
 const nu                = 𝕋(1.0 / 6.0)
 const tau               = 𝕋(3.0 * nu + 0.5)
-# const iτ                = inv(tau)                  # (OP2 sched'd)
-# const cτ                = 𝕋(1.0) - iτ               # (OP2 sched'd)
+
+# NEW, collide constants (calculated just once; however kept const, typed, globals)
+const iτ                = inv(tau)                  # (OP2)
+const cτ                = 𝕋(1.0) - iτ               # (OP2)
 
 # Maximum macroscopic speed
 const u_max             = 𝕋(0.04 / scale)
@@ -39,6 +41,10 @@ const rho0              = 𝕋(1.0)
 # Simulation time steps
 const NSTEPS            = UInt(round(204800 / scale / scale))
 
+# NEW, taylor_green constants (calculated just once; however kept const, typed, globals)
+const kx                = 𝕋(2.0 * π) / NX                    # (OP2)
+const ky                = 𝕋(2.0 * π) / NY                    # (OP2)
+const td                = 𝕋(1.0) / (nu * (kx*kx + ky*ky))    # (OP2)
 
 #----------------------------------------------------------------------------------------------#
 #                                     Auxiliary Functions                                      #
@@ -61,9 +67,6 @@ field_index(x::UInt, y::UInt, d::UInt)::UInt = ndir * (NX * (y - 1) + x - 1) + d
 Function to compute the exact solution for Taylor-Green vortex decay
 """
 function taylor_green(t::𝕋, x::UInt, y::UInt)::NTuple{3, 𝕋}
-    kx = 𝕋(2.0 * π) / NX                    # (OP2 sched'd)
-    ky = 𝕋(2.0 * π) / NY                    # (OP2 sched'd)
-    td = 𝕋(1.0) / (nu * (kx*kx + ky*ky))    # (OP2 sched'd)
     X  = 𝕋(x - NX / 𝕋(2.0))     # Centered vortex
     Y  = 𝕋(y - NY / 𝕋(2.0))     # Centered vortex
     ux = - u_max * √(ky / kx) * cos(kx * X) * sin(ky * Y) * exp(-𝕋(t) / td)
@@ -160,13 +163,11 @@ density and velocity values.
 """
 function collide(𝑓::Vector{𝕋}, ρ::Vector{𝕋},
                  𝑢::Vector{𝕋}, 𝑣::Vector{𝕋})::Nothing
-    iτ = 𝕋(2.0 / (6.0 * nu + 1.0))    # inverse         # (OP2 sched'd)
-    cτ = 𝕋(1.0) - iτ                  # complement      # (OP2 sched'd)
     for 𝑦 in UInt(1):NY
         for 𝑥 in UInt(1):NX
             # Initialize
             𝑗 = scalar_index(𝑥, 𝑦)
-            ϱ = 𝚞 = 𝚟 = ρ[𝑗], 𝑢[𝑗], 𝑣[𝑗]    # (OP1)
+            ϱ, 𝚞, 𝚟 = ρ[𝑗], 𝑢[𝑗], 𝑣[𝑗]      # (OP1)
             𝘂𝘂 = 𝚞 * 𝚞 + 𝚟 * 𝚟              # (OP1)
             for 𝑖 in UInt(1):ndir
                 ξ𝘂 = 𝕋(dirx[𝑖] * 𝚞 + diry[𝑖] * 𝚟)
