@@ -27,6 +27,8 @@ const diry              = (+0, +0, +1, +0, -1, +1, +1, -1, -1)
 # Kinematic viscosity and parameter tau
 const nu                = 𝕋(1.0 / 6.0)
 const tau               = 𝕋(3.0 * nu + 0.5)
+const iτ                = inv(tau)
+const cτ                = 𝕋(1.0) - iτ
 
 # Maximum macroscopic speed
 const u_max             = 𝕋(0.04 / scale)
