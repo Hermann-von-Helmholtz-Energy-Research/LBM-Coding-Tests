@@ -72,19 +72,20 @@ The `julia` language tests were  performed  with  the  following  characteristic
     inset: 4pt,
     table.header[*Domain size*][*Time Steps*][*Precision*][*Code*][*Memory*][*Host*][*Speed (Mlups)*][*Relative Speed*],
     table.cell(rowspan: 9)[32 #sym.times 32],
-         table.cell(rowspan: 9)[204'800],
+         table.cell(rowspan: 9)[204800],
                        table.cell(rowspan: 5)[`Float64`], [`OP1`],
                                              table.cell(rowspan: 4)[168.47 KiB],   [`stilo`], [ 3.61], [1.000],
                                                           [`ORI`],
-                                                          table.cell(rowspan: 8)[`freebird`], [21.69], [0.916],
+                                                          table.cell(rowspan: 4)[`freebird`], [21.69], [0.916],
                                                           [`OP1`],                            [23.68], [1.000],
                                                           [`OP2`],                            [20.72], [0.875],
                                                           [`OP3`], [168.84 KiB],              [12.65], [0.534],
                        table.cell(rowspan: 4)[`Float32`], [`ORI`],
-                                             table.cell(rowspan: 3)[168.47 KiB],              [ 3.61], [1.000],
-                                                          [`OP1`],                            [23.68], [1.000],
-                                                          [`OP2`],                            [20.72], [0.875],
-                                                          [`OP3`], [168.84 KiB],              [12.65], [0.534],
+                                             table.cell(rowspan: 3)[ 84.47 KiB],
+                                                          table.cell(rowspan: 4)[`freebird`], [20.64], [0.921],
+                                                          [`OP1`],                            [22.42], [1.000],
+                                                          [`OP2`],                            [20.68], [0.922],
+                                                          [`OP3`], [ 84.81 KiB],              [12.23], [0.545],
   ),
   caption: [Benchmark results for tested julia codes],
 ) <julia-times-1>
@@ -115,5 +116,21 @@ avoided:
 - Moving some function's unique `local` constants into the global scope, even if they are declared as  `const`s,  and  being  explicitly  typed,
   access to a function's locals is still faster, even if they have to be re-computed time and again when their defining function  is  repeatedly
   called.
+
+Benchmark tests performed with 32-bit-precision floating point numbers, identified as `Float32` on @julia-times-1, showed a very similar pattern
+as the `Float64` tests (performed with 64-bit-precision floating point numbers), due to very similar relative speeds of the tested codes carried
+out with higher precision.
+
+Contrary to expectation, the 32-bit-percision tests did not yield higher `Mlups` than their 64-bit-precision counterparts.  Conjectures  include
+(i)~modern CPUs would be designed to be more performant for the standard 64-bit width floating point numbers, or (ii)~the effect is  simply  due
+to memory misallignment penalties overcoming faster 32-bit calculation gains.
+
+Despite the broken expectation, two things are worth noting: (1)~the speed difference is small, but (2)~the gains in memory usage are abundantly
+clear in favor of the 32-bit calculations. Moreover, based on the overall memory allocation, the 32-bit simulation fits entirely in  the  host's
+L1 cache, while the 64-bit simulation only fits partially.
+
+Aditionally, a results comparison is needed, as to assess whether the usage of 32-bit  precision  floating  point  number  does  not  noticeably
+influence the precision of the simulated quantities.
+
 
 
