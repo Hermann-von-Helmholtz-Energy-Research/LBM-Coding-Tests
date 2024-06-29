@@ -32,8 +32,8 @@ function taylor_green(t::𝕋, x::UInt, y::UInt;
     kx = 𝕋(2.0 * π) / NX
     ky = 𝕋(2.0 * π) / NY
     td = 𝕋(1.0) / (nu * (kx*kx + ky*ky))
-    X  = 𝕋(x + 0.5)
-    Y  = 𝕋(y + 0.5)
+    X  = 𝕋(x - NX / 𝕋(2.0))     # Centered vortex
+    Y  = 𝕋(y - NY / 𝕋(2.0))     # Centered vortex
     ux = - u_max * √(ky / kx) * cos(kx * X) * sin(ky * Y) * exp(-t / td)
     uy = + u_max * √(kx / ky) * sin(kx * X) * cos(ky * Y) * exp(-t / td)
     P  = - 𝕋(0.25) * rho0 * u_max * u_max * ( (ky / kx) * cos(2kx * X)
