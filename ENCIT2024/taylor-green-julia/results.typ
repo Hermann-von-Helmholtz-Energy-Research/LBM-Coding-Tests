@@ -58,19 +58,56 @@ no L3 cache, running at
 
 == C (ISO C99) Codes
 
-The `ISO-C99` code was compiled with `GCC`, version `14.1.1` of `2024-05-22` (Copyright #sym.copyright 2024 Free Software Foundation, Inc.) in each one of the computing environments described above. ...
+The `ISO-C99` code was compiled with `GCC`, version `14.1.1` of `2024-05-22` (Copyright #sym.copyright 2024 Free Software Foundation,  Inc.)  in
+each one of the computing environments described above. ...
 
 == Julia Codes
 
-The `julia` language tests were performed with the following characteristics: version `1.10.2` (commit `bd47eca2c8a` official build) reporting CPU frequency of `1.04GHz`, `libopenlibm`, and `libLLVM-15.0.7` on host `stilo`.
+The `julia` language tests were  performed  with  the  following  characteristics:  version  `1.10.2`  (commit  `bd47eca2c8a`  official  build),
+`libopenlibm`, and `libLLVM-15.0.7`, reporting, respectively on hosts `stilo`, and `freebird`, CPU frequencies of `1.04GHz`, and of `3.60GHz`.
 
-#align(center, table(align: center + horizon,
-    columns: 7,
+#figure(
+  table(align: center + horizon,
+    columns: 8,
     inset: 4pt,
-    table.header[Domain size][Time Steps][Precision][Memory][Host][Speed (Mlups)][Relative Speed],
-    [32 #sym.times 32], [204'800], [`Float64`], [168.47 KiB], [`stilo`], [3.61 (avg. of 3)], [],
-  )
-)
+    table.header[*Domain size*][*Time Steps*][*Precision*][*Memory*][*Code*][*Host*][*Speed (Mlups)*][*Relative Speed*],
+    table.cell(rowspan: 4)[32 #sym.times 32],
+    table.cell(rowspan: 4)[204'800],
+    table.cell(rowspan: 4)[`Float64`],
+    table.cell(rowspan: 4)[168.47 KiB],
+    [`OP1`], [`stilo`]                         , [ 3.61], [1.000],
+    [`ORI`], table.cell(rowspan: 3)[`freebird`], [21.69], [0.916],
+    [`OP1`],                                     [23.68], [1.000],
+    [`OP2`],                                     [20.72], [0.875],
+  ),
+  caption: [Benchmark results for tested julia codes],
+) <julia-times-1>
 
+= Implementation Lessons from the Benchmarks
+
+== Julia
+
+The `OP1` code optimization set include:
+
+- Explicitly declaring a global `const` precision type, named `𝕋`, and using it in all type  declarations  and  whenever  initializing  floating
+  point quantities, as in `const 𝕋 = ℙ` --- with `ℙ` being previously defined in the REPL session, as a floating point precision type, as in
+  `ℙ = Float64`.
+- Replacing hardcoded constants by a `const`, typed variable consistent with its usage, as in `const chunk = UInt(32)`.
+- Saving results to a local variable instead of calculating it repeated (=`ndir`) times inside double loops, as in `𝘂𝘂 = 𝚞 * 𝚞 + 𝚟 * 𝚟`  outside
+  the `for` loop that uses it. This might be the greatest source of increased speed.
+- Using `tuple`-like multiple assignments whenever convenient, as in `ϱ, 𝚞, 𝚟 = ρ[i], 𝑢[i], 𝑣[i]`.
+- Using cascading initialization `=` assignments whenever convenient, as in `ϱ = 𝚞 = 𝚟 = zero(𝕋)`.
+
+It's implementation resulted in a gain of relative speed from $0.916$ to $1$, for the $32 #sym.times 32$, `Float64` case, as shown on
+@julia-times-1.
+
+Further attempts at optimization focused mainly on declaration placements where gathered in a set named `OP2`. As the benchmarks  reveal,  `OP2`
+resulted in such drastic performance _loss_ that outweighted the gains earned with `OP1`. Therefore, the strategy implemented on `OP2` is to  be
+avoided:
+
+// !j 144 -i2 -H-2
+- Moving some function's unique `local` constants into the global scope, even if they are declared as  `const`s,  and  being  explicitly  typed,
+  access to a function's locals is still faster, even if they have to be re-computed time and again when their defining function  is  repeatedly
+  called.
 
 
