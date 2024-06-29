@@ -12,24 +12,24 @@ const NY                = NX
 const ndir              = UInt(9)
 const amountof_scalar   = UInt(NX * NY)
 const amountof_vector   = UInt(NX * NY * ndir)
-const mem_size_scalar   = UInt(NX * NY * sizeof(Float64))
-const mem_size_vector   = UInt(NX * NY * ndir * sizeof(Float64))
-const w0                = Float64(4.0 /  9.0)           # zero velocity weight
-const ws                = Float64(1.0 /  9.0)           # size velocity weight
-const wd                = Float64(1.0 / 36.0)           # diag velocity weight
+const mem_size_scalar   = UInt(NX * NY * sizeof(Float32))
+const mem_size_vector   = UInt(NX * NY * ndir * sizeof(Float32))
+const w0                = Float32(4.0 /  9.0)           # zero velocity weight
+const ws                = Float32(1.0 /  9.0)           # size velocity weight
+const wd                = Float32(1.0 / 36.0)           # diag velocity weight
 const wi                = (w0, ws, ws, ws, ws, wd, wd, wd, wd)      # Tuples are immutable
 const dirx              = (+0, +1, +0, -1, +0, +1, -1, -1, +1)
 const diry              = (+0, +0, +1, +0, -1, +1, +1, -1, -1)
 
 # Kinematic viscosity and parameter tau
-const nu                = Float64(1.0 / 6.0)
-const tau               = Float64(3.0 * nu + 0.5)
+const nu                = Float32(1.0 / 6.0)
+const tau               = Float32(3.0 * nu + 0.5)
 
 # Maximum macroscopic speed
-const u_max             = Float64(0.04 / scale)
+const u_max             = Float32(0.04 / scale)
 
 # Fluid density
-const rho0              = Float64(1.0)
+const rho0              = Float32(1.0)
 
 # Simulation time steps
 const NSTEPS            = UInt(round(204800 / scale / scale))
@@ -55,22 +55,22 @@ field_index(x::UInt, y::UInt, d::UInt)::UInt = ndir * (NX * (y - 1) + x - 1) + d
 `taylor_green`\n
 Function to compute the exact solution for Taylor-Green vortex decay
 """
-function taylor_green(t::Float64, x::UInt, y::UInt)::NTuple{3, Float64}
-    kx = Float64(2.0 * π) / NX
-    ky = Float64(2.0 * π) / NY
-    td = Float64(1.0) / (nu * (kx*kx + ky*ky))
-    X  = Float64(x - NX / Float64(2.0))     # Centered vortex
-    Y  = Float64(y - NY / Float64(2.0))     # Centered vortex
+function taylor_green(t::Float32, x::UInt, y::UInt)::NTuple{3, Float32}
+    kx = Float32(2.0 * π) / NX
+    ky = Float32(2.0 * π) / NY
+    td = Float32(1.0) / (nu * (kx*kx + ky*ky))
+    X  = Float32(x - NX / Float32(2.0))     # Centered vortex
+    Y  = Float32(y - NY / Float32(2.0))     # Centered vortex
     ux = - u_max * √(ky / kx) * cos(kx * X) * sin(ky * Y) * exp(-t / td)
     uy = + u_max * √(kx / ky) * sin(kx * X) * cos(ky * Y) * exp(-t / td)
-    P  = - Float64(0.25) * rho0 * u_max * u_max * ( (ky / kx) * cos(2kx * X)
+    P  = - Float32(0.25) * rho0 * u_max * u_max * ( (ky / kx) * cos(2kx * X)
                                              +(kx / ky) * sin(2ky * Y) )
-    rh = rho0 + Float64(3.0) * P
+    rh = rho0 + Float32(3.0) * P
     return (rh, ux, uy)
 end
 
-function taylor_green(t::Float64, ρ::Vector{Float64},
-                      𝑢::Vector{Float64}, 𝑣::Vector{Float64})::Nothing
+function taylor_green(t::Float32, ρ::Vector{Float32},
+                      𝑢::Vector{Float32}, 𝑣::Vector{Float32})::Nothing
     for j in UInt(1):NY
         for i in UInt(1):NX
             𝑖 = scalar_index(i, j)
@@ -80,24 +80,24 @@ function taylor_green(t::Float64, ρ::Vector{Float64},
 end
 
 """
-`init_equilibrium(𝑓::Vector{Float64}, ρ::Vector{Float64},
-                  𝑢::Vector{Float64}, 𝑣::Vector{Float64})::Nothing`\n
+`init_equilibrium(𝑓::Vector{Float32}, ρ::Vector{Float32},
+                  𝑢::Vector{Float32}, 𝑣::Vector{Float32})::Nothing`\n
 Function to initialise an equilibrium particle population `f` with provided `ρ, 𝑢, 𝑣`
 macroscopic fields.
 """
-function init_equilibrium(𝑓::Vector{Float64}, ρ::Vector{Float64},
-                          𝑢::Vector{Float64}, 𝑣::Vector{Float64})::Nothing
+function init_equilibrium(𝑓::Vector{Float32}, ρ::Vector{Float32},
+                          𝑢::Vector{Float32}, 𝑣::Vector{Float32})::Nothing
     for 𝑦 in UInt(1):NY
         for 𝑥 in UInt(1):NX
             i = scalar_index(𝑥, 𝑦)
             ϱ, 𝚞, 𝚟 = ρ[i], 𝑢[i], 𝑣[i]
             for 𝑖 in UInt(1):ndir
-                ξ𝘂 = Float64(dirx[𝑖] * 𝚞 + diry[𝑖] * 𝚟)
+                ξ𝘂 = Float32(dirx[𝑖] * 𝚞 + diry[𝑖] * 𝚟)
                 𝑓[field_index(𝑥, 𝑦, 𝑖)] = wi[𝑖] * ϱ * (
-                    + Float64(1.0)
-                    + Float64(3.0) * ξ𝘂
-                    + Float64(4.5) * ξ𝘂 * ξ𝘂
-                    - Float64(1.5) * (𝚞 * 𝚞 + 𝚟 * 𝚟)
+                    + Float32(1.0)
+                    + Float32(3.0) * ξ𝘂
+                    + Float32(4.5) * ξ𝘂 * ξ𝘂
+                    - Float32(1.5) * (𝚞 * 𝚞 + 𝚟 * 𝚟)
                 )
             end
         end
@@ -105,11 +105,11 @@ function init_equilibrium(𝑓::Vector{Float64}, ρ::Vector{Float64},
 end
 
 """
-`stream(𝑓::Vector{Float64}, 𝑔::Vector{Float64})::Nothing`\n
+`stream(𝑓::Vector{Float32}, 𝑔::Vector{Float32})::Nothing`\n
 Function that performs streaming of the populations in a fully periodic domain, reading from 𝑓
 and storing to 𝑔.
 """
-function stream(𝑓::Vector{Float64}, 𝑔::Vector{Float64})::Nothing
+function stream(𝑓::Vector{Float32}, 𝑔::Vector{Float32})::Nothing
     for 𝑦 in UInt(1):NY
         for 𝑥 in UInt(1):NX
             for 𝑖 in UInt(1):ndir
@@ -124,18 +124,18 @@ function stream(𝑓::Vector{Float64}, 𝑔::Vector{Float64})::Nothing
 end
 
 """
-`compute_rho_u(𝑓::Vector{Float64}, ρ::Vector{Float64},
-               𝑢::Vector{Float64}, 𝑣::Vector{Float64})::Nothing`\n
+`compute_rho_u(𝑓::Vector{Float32}, ρ::Vector{Float32},
+               𝑢::Vector{Float32}, 𝑣::Vector{Float32})::Nothing`\n
 Function that computes macroscopics from mesoscopics.
 """
-function compute_rho_u(𝑓::Vector{Float64}, ρ::Vector{Float64},
-                       𝑢::Vector{Float64}, 𝑣::Vector{Float64})::Nothing
+function compute_rho_u(𝑓::Vector{Float32}, ρ::Vector{Float32},
+                       𝑢::Vector{Float32}, 𝑣::Vector{Float32})::Nothing
     for 𝑦 in UInt(1):NY
         for 𝑥 in UInt(1):NX
             # Initialize
-            ϱ = zero(Float64)
-            𝚞 = zero(Float64)
-            𝚟 = zero(Float64)
+            ϱ = zero(Float32)
+            𝚞 = zero(Float32)
+            𝚟 = zero(Float32)
             𝑗 = scalar_index(𝑥, 𝑦)
             # Integrate
             for 𝑖 in UInt(1):ndir
@@ -152,15 +152,15 @@ function compute_rho_u(𝑓::Vector{Float64}, ρ::Vector{Float64},
 end
 
 """
-`collide(𝑓::Vector{Float64}, ρ::Vector{Float64},
-         𝑢::Vector{Float64}, 𝑣::Vector{Float64})::Nothing`\n
+`collide(𝑓::Vector{Float32}, ρ::Vector{Float32},
+         𝑢::Vector{Float32}, 𝑣::Vector{Float32})::Nothing`\n
 Function that performs the collision operation on the particle populations using pre-computed
 density and velocity values.
 """
-function collide(𝑓::Vector{Float64}, ρ::Vector{Float64},
-                 𝑢::Vector{Float64}, 𝑣::Vector{Float64})::Nothing
-    iτ = Float64(2.0 / (6.0 * nu + 1.0))    # inverse
-    cτ = Float64(1.0) - iτ                  # complement
+function collide(𝑓::Vector{Float32}, ρ::Vector{Float32},
+                 𝑢::Vector{Float32}, 𝑣::Vector{Float32})::Nothing
+    iτ = Float32(2.0 / (6.0 * nu + 1.0))    # inverse
+    cτ = Float32(1.0) - iτ                  # complement
     for 𝑦 in UInt(1):NY
         for 𝑥 in UInt(1):NX
             # Initialize
@@ -169,13 +169,13 @@ function collide(𝑓::Vector{Float64}, ρ::Vector{Float64},
             𝚞 = 𝑢[𝑗]
             𝚟 = 𝑣[𝑗]
             for 𝑖 in UInt(1):ndir
-                ξ𝘂 = Float64(dirx[𝑖] * 𝚞 + diry[𝑖] * 𝚟)
+                ξ𝘂 = Float32(dirx[𝑖] * 𝚞 + diry[𝑖] * 𝚟)
                 # Equilibrium
                 𝑓eq = wi[𝑖] * ϱ * (
-                    + Float64(1.0)
-                    + Float64(3.0) * ξ𝘂
-                    + Float64(4.5) * ξ𝘂 * ξ𝘂
-                    - Float64(1.5) * (𝚞 * 𝚞 + 𝚟 * 𝚟)
+                    + Float32(1.0)
+                    + Float32(3.0) * ξ𝘂
+                    + Float32(4.5) * ξ𝘂 * ξ𝘂
+                    - Float32(1.5) * (𝚞 * 𝚞 + 𝚟 * 𝚟)
                 )
                 # Relax to equilibrium
                 𝑓[field_index(𝑥, 𝑦, 𝑖)] = cτ * 𝑓[field_index(𝑥, 𝑦, 𝑖)] + iτ * 𝑓eq
@@ -193,13 +193,13 @@ end
 
 function main(argc::Integer = length(ARGS), argv::Vector{String} = ARGS)::Integer
     # Allocate memory, without initialization
-    𝑓 = Vector{Float64}(undef, amountof_vector)
-    𝑔 = Vector{Float64}(undef, amountof_vector)
-    ρ = Vector{Float64}(undef, amountof_scalar)
-    𝑢 = Vector{Float64}(undef, amountof_scalar)
-    𝑣 = Vector{Float64}(undef, amountof_scalar)
+    𝑓 = Vector{Float32}(undef, amountof_vector)
+    𝑔 = Vector{Float32}(undef, amountof_vector)
+    ρ = Vector{Float32}(undef, amountof_scalar)
+    𝑢 = Vector{Float32}(undef, amountof_scalar)
+    𝑣 = Vector{Float32}(undef, amountof_scalar)
     # Initialize ρ, 𝑢, 𝑣 with macroscopic flow
-    taylor_green(zero(Float64), ρ, 𝑢, 𝑣)
+    taylor_green(zero(Float32), ρ, 𝑢, 𝑣)
     # Initialize 𝑓 at equilibrium
     init_equilibrium(𝑓, ρ, 𝑢, 𝑣)
     # Main loop
@@ -215,7 +215,7 @@ function main(argc::Integer = length(ARGS), argv::Vector{String} = ARGS)::Intege
         # PROGRESS
         # if (n % 128 == 0) || (n == NSTEPS)
         #     if (n % 8192 == 0) || (n == NSTEPS)
-        #         println(format(" ({1:6d}: {2:5.1f}%)", n, Float64(100n)/Float64(NSTEPS)))
+        #         println(format(" ({1:6d}: {2:5.1f}%)", n, Float32(100n)/Float32(NSTEPS)))
         #     else
         #         print(".")
         #     end
