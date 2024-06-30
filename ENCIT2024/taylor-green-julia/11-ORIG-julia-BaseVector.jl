@@ -17,8 +17,8 @@ BenchmarkTools.Trial: 10000 samples with 10 evaluations.
  Time  (median):     1.558 μs (↓)           ┊ GC (median):     0.00%
  Time  (mean ± σ):   1.798 μs ±   6.372 μs  ┊ GC (mean ± σ):  10.97% ±  3.24%
               ↓
-        ▄▆▇██▇┊▅▄▄▂▁▁
-  ▂▃▃▅▆███████┊██████▇▇▅▄▄▃▂▂▂▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁ ▃
+        ▄▆▇██▇▆▅▄▄▂▁▁
+  ▂▃▃▅▆██████████████▇▇▅▄▄▃▂▂▂▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁ ▃
   1.48 μs         Histogram: frequency by time        1.87 μs <
 
  Memory estimate: 4.91 KiB, allocs estimate: 50.
@@ -78,14 +78,14 @@ Function to compute the exact solution for Taylor-Green vortex decay.
 julia> par = init(Float64, 0)
 [...]
 julia> @benchmark taylor_green(par[:typ][:p](0.0), UInt64(17), UInt64(17), cas=par[:cas], pro=par[:pro])
-BenchmarkTools.Trial: 10000 samples with 197 evaluations.
- Range (min … max):  452.980 ns …  13.235 μs  ┊ GC (min … max): 0.00% … 95.39%
- Time  (median):     455.132 ns (↓)           ┊ GC (median):    0.00%
- Time  (mean ± σ):   460.005 ns ± 188.156 ns  ┊ GC (mean ± σ):  0.74% ±  1.85%
-         ↓
-      ▁▅██▄                
-  ▂▂▃▅██████▆▅▄▃▃▃▂▂▂▂▂▂▂▂▂▂▂▂▂▂▁▁▁▁▁▁▂▁▁▁▁▂▁▁▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂ ▃
-  453 ns           Histogram: frequency by time          471 ns <
+BenchmarkTools.Trial: 10000 samples with 200 evaluations.
+ Range (min … max):  411.825 ns …  11.114 μs  ┊ GC (min … max): 0.00% … 94.56%
+ Time  (median):     415.495 ns (↓)           ┊ GC (median):    0.00%
+ Time  (mean ± σ):   419.269 ns ± 152.000 ns  ┊ GC (mean ± σ):  0.62% ±  1.80%
+              ↓
+           ▃█▇▄▁          
+  ▂▂▂▂▃▃▄▄▆█████▆▅▄▄▃▃▃▂▂▂▂▂▂▂▂▁▁▁▂▁▁▁▁▁▁▁▁▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▁▂▁▂ ▃
+  412 ns           Histogram: frequency by time          431 ns <
 
  Memory estimate: 96 bytes, allocs estimate: 3.
 
@@ -124,13 +124,13 @@ julia> par = init(Float64, 0)
 [...]
 julia> @benchmark taylor_green_sq(par[:typ][:p](0.0), UInt64(17), UInt64(17), cas=par[:cas], pro=par[:pro])
 BenchmarkTools.Trial: 10000 samples with 200 evaluations.
- Range (min … max):  404.690 ns …  11.110 μs  ┊ GC (min … max): 0.00% … 94.99%
- Time  (median):     406.475 ns (↓)           ┊ GC (median):    0.00%
- Time  (mean ± σ):   410.443 ns ± 154.835 ns  ┊ GC (mean ± σ):  0.66% ±  1.81%
-         ↓
-    ▃▅▇██▇▆▅▄▂▂▂▂▂▂▂▁▁                                          ▂
-  ▆████████████████████▇▆▆▅▆▃▄▃▃▃▅▁▁▁▁▄▁▁▁▃▁▁▁▁▃▄▇█▇███▇▇▆▇▄▅▅▆ █
-  405 ns        Histogram: log(frequency) by time        421 ns <
+ Range (min … max):  402.195 ns …  11.641 μs  ┊ GC (min … max): 0.00% … 95.25%
+ Time  (median):     404.585 ns (↓)           ┊ GC (median):    0.00%
+ Time  (mean ± σ):   408.274 ns ± 162.089 ns  ┊ GC (mean ± σ):  0.69% ±  1.83%
+           ↓
+      ▃▅▇███▇▆▆▅▄▃▃▂▂▁ ▁▁▁▁                              ▁      ▃
+  ▄▆▆█████████████████████████▇▆▇▅▆▅▃▄▁▁▅▁▄▁▁▃▃▁▃▃▅▅▆▇▇█▇█▇▇▇▇▇ █
+  402 ns        Histogram: log(frequency) by time        418 ns <
 
  Memory estimate: 96 bytes, allocs estimate: 3.
 
@@ -145,7 +145,7 @@ function taylor_green_sq(t::𝕋, x::𝕌, y::𝕌;
     𝟐   = 𝕋(2.0)
     𝟐𝛑  = 𝟐 * π
     k   = 𝟐𝛑 / 𝐍                # promote_type(UInt32, Float##) -> Float##
-    td  = pro[:ν] * k * k * 𝟐
+    td  = pro[:ν] * (k*k + k*k) # The sum is way faster than (k*k*𝟐)
     X   = 𝕋(x) - 𝐍 / 𝟐          # Centered vortex
     Y   = 𝕋(y) - 𝐍 / 𝟐          # Centered vortex
     𝚞   = - 𝐔 * cos(k * X) * sin(k * Y) * exp(-t * td)
