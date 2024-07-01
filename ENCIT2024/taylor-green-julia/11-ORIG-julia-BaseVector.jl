@@ -102,12 +102,14 @@ function taylor_green(t::𝕋, x::𝕌, y::𝕌;
     𝟐𝛑  = 𝟐 * π
     kx  = 𝟐𝛑 / 𝐍𝐱     # promote_type(UInt32, Float##) -> Float##
     ky  = 𝟐𝛑 / 𝐍𝐲
+    𝐞   = exp(-t * td)
     td  = pro[:ν] * (kx*kx + ky*ky)
     X   = 𝕋(x) - 𝐍𝐱 / 𝟐     # Centered vortex
     Y   = 𝕋(y) - 𝐍𝐲 / 𝟐     # Centered vortex
-    𝚞   = - 𝐔 * √(ky / kx) * cos(kx * X) * sin(ky * Y) * exp(-t * td)
-    𝚟   = + 𝐔 * √(kx / ky) * sin(kx * X) * cos(ky * Y) * exp(-t * td)
-    P   = - 𝕋(0.25) * ϱ * 𝐔 * 𝐔 * ((ky / kx) * cos(𝟐 * kx * X) + (kx / ky) * sin(𝟐 * ky * Y))
+    𝚞   = - 𝐔 * √(ky / kx) * cos(kx * X) * sin(ky * Y) * 𝐞
+    𝚟   = + 𝐔 * √(kx / ky) * sin(kx * X) * cos(ky * Y) * 𝐞
+    P   = - 𝕋(0.25) * ϱ * 𝐔 * 𝐔 * ((ky / kx) * cos(𝟐 * kx * X) +
+                                   (kx / ky) * cos(𝟐 * ky * Y)) * 𝐞 * 𝐞
     ρ   = ϱ + 𝕋(3.0) * P
     return ρ, 𝚞, 𝚟
 end
@@ -144,13 +146,14 @@ function taylor_green_sq(t::𝕋, x::𝕌, y::𝕌;
     ϱ   = pro[:ρ₀]
     𝟐   = 𝕋(2.0)
     𝟐𝛑  = 𝟐 * π
+    𝐞   = exp(-t * td)
     k   = 𝟐𝛑 / 𝐍                # promote_type(UInt32, Float##) -> Float##
     td  = pro[:ν] * (k*k + k*k) # The sum is way faster than (k*k*𝟐)
     X   = 𝕋(x) - 𝐍 / 𝟐          # Centered vortex
     Y   = 𝕋(y) - 𝐍 / 𝟐          # Centered vortex
-    𝚞   = - 𝐔 * cos(k * X) * sin(k * Y) * exp(-t * td)
-    𝚟   = + 𝐔 * sin(k * X) * cos(k * Y) * exp(-t * td)
-    P   = - 𝕋(0.25) * ϱ * 𝐔 * 𝐔 * (cos(𝟐 * k * X) + sin(𝟐 * k * Y))
+    𝚞   = - 𝐔 * cos(k * X) * sin(k * Y) * 𝐞
+    𝚟   = + 𝐔 * sin(k * X) * cos(k * Y) * 𝐞
+    P   = - 𝕋(0.25) * ϱ * 𝐔 * 𝐔 * (cos(𝟐 * k * X) + sin(𝟐 * k * Y)) * 𝐞 * 𝐞
     ρ   = ϱ + 𝕋(3.0) * P
     return ρ, 𝚞, 𝚟
 end
