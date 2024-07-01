@@ -40,13 +40,13 @@ extern inline size_t field_index(unsigned int x, unsigned int y, unsigned int d)
 void taylor_green(unsigned int t, unsigned int x, unsigned int y, double *r, double *u, double *v) {
     double kx = 2 * M_PI/NX;
     double ky = 2 * M_PI/NY;
-    double td = 1/(nu * (kx * kx + ky * ky));
+    double td = nu * (kx * kx + ky * ky);
 
     double X = x + 0.5;
     double Y = y + 0.5;
-    double ux = -u_max * sqrt(ky/kx) * cos(kx*X) * sin(ky*Y) * exp(-1*t/td);
-    double uy = u_max * sqrt(kx/ky) * sin(kx*X) * cos(ky*Y) * exp(-1*t/td);
-    double P = -0.25*rho0*u_max*u_max*((ky/kx)*cos(2*kx*X)+(kx/ky)*cos(2*ky*Y))*exp(-2*t/td);
+    double ux = -u_max * sqrt(ky/kx) * cos(kx*X) * sin(ky*Y) * exp(-t*td);
+    double uy = u_max * sqrt(kx/ky) * sin(kx*X) * cos(ky*Y) * exp(-t*td);
+    double P = -0.25*rho0*u_max*u_max*((ky/kx)*cos(2*kx*X)+(kx/ky)*cos(2*ky*Y))*exp(-2*t*td);
     double rho = rho0 + 3 * P;
 
     *r = rho;
