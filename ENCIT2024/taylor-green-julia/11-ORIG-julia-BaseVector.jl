@@ -79,16 +79,15 @@ julia> par = init(Float64, 0)
 [...]
 julia> @benchmark taylor_green(par[:typ][:p](0.0), UInt64(17), UInt64(17), cas=par[:cas], pro=par[:pro])
 BenchmarkTools.Trial: 10000 samples with 200 evaluations.
- Range (min … max):  411.825 ns …  11.114 μs  ┊ GC (min … max): 0.00% … 94.56%
- Time  (median):     415.495 ns (↓)           ┊ GC (median):    0.00%
- Time  (mean ± σ):   419.269 ns ± 152.000 ns  ┊ GC (mean ± σ):  0.62% ±  1.80%
-              ↓
-           ▃█▇▄▁          
-  ▂▂▂▂▃▃▄▄▆█████▆▅▄▄▃▃▃▂▂▂▂▂▂▂▂▁▁▁▂▁▁▁▁▁▁▁▁▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▁▂▁▂ ▃
-  412 ns           Histogram: frequency by time          431 ns <
+ Range (min … max):  403.895 ns …  10.905 μs  ┊ GC (min … max): 0.00% … 95.08%
+ Time  (median):     405.905 ns (↓)           ┊ GC (median):    0.00%
+ Time  (mean ± σ):   409.369 ns ± 151.088 ns  ┊ GC (mean ± σ):  0.64% ±  1.81%
+          ↓
+    ▁▃▅▇███▇▆▅▄▂▁▂▂▂▁▂▂▁▁                               ▁       ▃
+  ▅▇███████████████████████▇▆▆▅▁▄▄▄▁▃▁▁▁▁▁▁▁▁▃▃▁▁▁▁▄▃▅▇▇██▆██▇▇ █
+  404 ns        Histogram: log(frequency) by time        419 ns <
 
  Memory estimate: 96 bytes, allocs estimate: 3.
-
 ```
 """
 function taylor_green(t::𝕋, x::𝕌, y::𝕌;
@@ -96,20 +95,22 @@ function taylor_green(t::𝕋, x::𝕌, y::𝕌;
                       pro::Dict{Symbol, 𝕋})::NTuple{3, 𝕋} where {𝕋, 𝕌}
     𝐍𝐱  = cas[:NX]
     𝐍𝐲  = cas[:NY]
-    𝐔   = pro[:u_max]
     ϱ   = pro[:ρ₀]
     𝟐   = 𝕋(2.0)
     𝟐𝛑  = 𝟐 * π
-    kx  = 𝟐𝛑 / 𝐍𝐱     # promote_type(UInt32, Float##) -> Float##
+    kx  = 𝟐𝛑 / 𝐍𝐱       # promote_type(UInt32, Float##) -> Float##
     ky  = 𝟐𝛑 / 𝐍𝐲
-    𝐞   = exp(-t * td)
     td  = pro[:ν] * (kx*kx + ky*ky)
-    X   = 𝕋(x) - 𝐍𝐱 / 𝟐     # Centered vortex
-    Y   = 𝕋(y) - 𝐍𝐲 / 𝟐     # Centered vortex
-    𝚞   = - 𝐔 * √(ky / kx) * cos(kx * X) * sin(ky * Y) * 𝐞
-    𝚟   = + 𝐔 * √(kx / ky) * sin(kx * X) * cos(ky * Y) * 𝐞
-    P   = - 𝕋(0.25) * ϱ * 𝐔 * 𝐔 * ((ky / kx) * cos(𝟐 * kx * X) +
-                                   (kx / ky) * cos(𝟐 * ky * Y)) * 𝐞 * 𝐞
+    𝐔𝐞  = pro[:u_max] * exp(-t * td)
+    X   = x - 𝐍𝐱 / 𝟐    # Centered vortex
+    Y   = y - 𝐍𝐲 / 𝟐    # Centered vortex
+    sx, cx  = sincos(kx * X)
+    sy, cy  = sincos(ky * Y)
+    c2x = cx * cx - sx * sx
+    c2y = cy * cy - sy * sy
+    𝚞   = - 𝐔𝐞 * √(ky / kx) * cx * sy
+    𝚟   = + 𝐔𝐞 * √(kx / ky) * sx * cy
+    P   = - 𝕋(0.25) * ϱ * 𝐔𝐞 * 𝐔𝐞 * ((ky / kx) * c2x + (kx / ky) * c2y)
     ρ   = ϱ + 𝕋(3.0) * P
     return ρ, 𝚞, 𝚟
 end
@@ -142,18 +143,21 @@ function taylor_green_sq(t::𝕋, x::𝕌, y::𝕌;
                          cas::Dict{Symbol, 𝕌},
                          pro::Dict{Symbol, 𝕋})::NTuple{3, 𝕋} where {𝕋, 𝕌}
     𝐍   = cas[:NX]
-    𝐔   = pro[:u_max]
     ϱ   = pro[:ρ₀]
     𝟐   = 𝕋(2.0)
     𝟐𝛑  = 𝟐 * π
-    𝐞   = exp(-t * td)
-    k   = 𝟐𝛑 / 𝐍                # promote_type(UInt32, Float##) -> Float##
-    td  = pro[:ν] * (k*k + k*k) # The sum is way faster than (k*k*𝟐)
-    X   = 𝕋(x) - 𝐍 / 𝟐          # Centered vortex
-    Y   = 𝕋(y) - 𝐍 / 𝟐          # Centered vortex
-    𝚞   = - 𝐔 * cos(k * X) * sin(k * Y) * 𝐞
-    𝚟   = + 𝐔 * sin(k * X) * cos(k * Y) * 𝐞
-    P   = - 𝕋(0.25) * ϱ * 𝐔 * 𝐔 * (cos(𝟐 * k * X) + sin(𝟐 * k * Y)) * 𝐞 * 𝐞
+    k   = 𝟐𝛑 / 𝐍        # promote_type(UInt32, Float##) -> Float##
+    td  = pro[:ν] * 𝟐 * k * k   # 𝟐*k*k ⋗ (k*k+k*k) 2.81x
+    𝐔𝐞  = pro[:u_max] * exp(-t * td)
+    X   = x - 𝐍 / 𝟐     # Centered vortex
+    Y   = y - 𝐍 / 𝟐     # Centered vortex
+    sx, cx  = sincos(k * X)
+    sy, cy  = sincos(k * Y)
+    c2x = cx * cx - sx * sx
+    c2y = cy * cy - sy * sy
+    𝚞   = - 𝐔𝐞 * cx * sy
+    𝚟   = + 𝐔𝐞 * sx * cy
+    P   = - 𝕋(0.25) * ϱ * 𝐔𝐞 * 𝐔𝐞 * (c2x + c2y)
     ρ   = ϱ + 𝕋(3.0) * P
     return ρ, 𝚞, 𝚟
 end
