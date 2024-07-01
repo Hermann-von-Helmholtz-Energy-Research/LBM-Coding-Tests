@@ -75,17 +75,21 @@ taylor_green(t::𝕋, x::𝕌, y::𝕌;
 Function to compute the exact solution for Taylor-Green vortex decay.
 
 ```julia-REPL
-julia> par = init(Float64, 0)
-[...]
-julia> @benchmark taylor_green(par[:typ][:p](0.0), UInt64(17), UInt64(17), cas=par[:cas], pro=par[:pro])
-BenchmarkTools.Trial: 10000 samples with 200 evaluations.
- Range (min … max):  403.895 ns …  10.905 μs  ┊ GC (min … max): 0.00% … 95.08%
- Time  (median):     405.905 ns (↓)           ┊ GC (median):    0.00%
- Time  (mean ± σ):   409.369 ns ± 151.088 ns  ┊ GC (mean ± σ):  0.64% ±  1.81%
-          ↓
-    ▁▃▅▇███▇▆▅▄▂▁▂▂▂▁▂▂▁▁                               ▁       ▃
-  ▅▇███████████████████████▇▆▆▅▁▄▄▄▁▃▁▁▁▁▁▁▁▁▃▃▁▁▁▁▄▃▅▇▇██▆██▇▇ █
-  404 ns        Histogram: log(frequency) by time        419 ns <
+julia> using BenchmarkTools, Unitful
+julia> include("./11-ORIG-julia-BaseVector.jl");
+julia> par = init(Float64, 0);
+julia> b = @benchmarkable taylor_green(par[:typ][:p](0.0), UInt64(17), UInt64(17), cas=par[:cas], pro=par[:pro])
+julia> b.params.evals = 1000;
+julia> b.params.seconds = 25.0;
+julia> run(b)
+BenchmarkTools.Trial: 10000 samples with 1000 evaluations.
+ Range (min … max):  405.070 ns …  3.032 μs  ┊ GC (min … max): 0.00% … 85.20%
+ Time  (median):     407.949 ns (↓)          ┊ GC (median):    0.00%
+ Time  (mean ± σ):   410.327 ns ± 48.111 ns  ┊ GC (mean ± σ):  0.45% ±  2.96%
+        ↓
+       █                                                        
+  ▃▇▃▃▄█▆▄▃▃▃▃▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▁▁▂▂▂▂▂▂▂▂▁▂▁▁▂▂▁▁▁▁▁▁▁▁▁▂▁▂▂▂▂▂▂ ▂
+  405 ns          Histogram: frequency by time          436 ns <
 
  Memory estimate: 96 bytes, allocs estimate: 3.
 ```
@@ -123,20 +127,23 @@ taylor_green_sq(t::𝕋, x::𝕌, y::𝕌;
 Function to compute the exact solution for Taylor-Green vortex decay in a square domain.
 
 ```julia-REPL
-julia> par = init(Float64, 0)
-[...]
-julia> @benchmark taylor_green_sq(par[:typ][:p](0.0), UInt64(17), UInt64(17), cas=par[:cas], pro=par[:pro])
+julia> using BenchmarkTools, Unitful
+julia> include("./11-ORIG-julia-BaseVector.jl");
+julia> par = init(Float64, 0);
+julia> 𝑏 = @benchmarkable taylor_green_sq(par[:typ][:p](0.0), UInt64(17), UInt64(17), cas=par[:cas], pro=par[:pro]);
+julia> 𝑏.params.evals = 1000;
+julia> 𝑏.params.seconds = 25.0;
+julia> run(𝑏)
 BenchmarkTools.Trial: 10000 samples with 200 evaluations.
- Range (min … max):  402.195 ns …  11.641 μs  ┊ GC (min … max): 0.00% … 95.25%
- Time  (median):     404.585 ns (↓)           ┊ GC (median):    0.00%
- Time  (mean ± σ):   408.274 ns ± 162.089 ns  ┊ GC (mean ± σ):  0.69% ±  1.83%
-           ↓
-      ▃▅▇███▇▆▆▅▄▃▃▂▂▁ ▁▁▁▁                              ▁      ▃
-  ▄▆▆█████████████████████████▇▆▇▅▆▅▃▄▁▁▅▁▄▁▁▃▃▁▃▃▅▅▆▇▇█▇█▇▇▇▇▇ █
-  402 ns        Histogram: log(frequency) by time        418 ns <
+ Range (min … max):  399.807 ns …  2.559 μs  ┊ GC (min … max): 0.00% … 0.00%
+ Time  (median):     405.780 ns (↓)          ┊ GC (median):    0.00%
+ Time  (mean ± σ):   407.502 ns ± 45.823 ns  ┊ GC (mean ± σ):  0.39% ± 2.95%
+             ↓
+             █   
+  ▂▃▃▃▄█▆▄▄▄██▄▃▂▂▂▂▂▂▁▂▂▂▁▁▂▂▂▂▂▂▂▁▁▂▂▂▂▁▁▁▁▁▁▁▁▁▁▁▁▂▂▂▂▂▂▂▂▂ ▂
+  400 ns          Histogram: frequency by time          434 ns <
 
  Memory estimate: 96 bytes, allocs estimate: 3.
-
 ```
 """
 function taylor_green_sq(t::𝕋, x::𝕌, y::𝕌;
@@ -164,24 +171,47 @@ end
 
 """
 ```
-init_equilibrium()
+init_equilibrium(𝑓::Array{𝕋, 3}, ρ::Array{𝕋, 2}, 𝑢::Array{𝕋, 2}, 𝑣::Array{𝕋, 2};
+                 latvec::Dict{Symbol, Vector{𝕋}})::Nothing where 𝕋
 ```\n
 Function to initialise an equilibrium particle population `f` with provided `ρ, 𝑢, 𝑣`
 macroscopic fields.
+
+```julia-REPL
+julia> using BenchmarkTools, Unitful
+julia> include("./11-ORIG-julia-BaseVector.jl");
+julia> par = init(Float64, 0);
+julia> f = Array{par[:typ][:p], 3}(undef, (par[:cas][:NX], par[:cas][:NY], par[:lat][:int][:vel]));
+julia> ρ = Array{par[:typ][:p], 2}(undef, (par[:cas][:NX], par[:cas][:NY]));
+julia> 𝑢 = Array{par[:typ][:p], 2}(undef, (par[:cas][:NX], par[:cas][:NY]));
+julia> 𝑣 = Array{par[:typ][:p], 2}(undef, (par[:cas][:NX], par[:cas][:NY]));
+julia> 𝑏 = @benchmarkable init_equilibrium(f, ρ, 𝑢, 𝑣, latvec = par[:lat][:vec]);
+julia> tune!(𝑏);
+julia> run(𝑏)
+BenchmarkTools.Trial: 10000 samples with 1 evaluation.
+ Range (min … max):  19.106 μs …  74.016 μs  ┊ GC (min … max): 0.00% … 0.00%
+ Time  (median):     19.448 μs (↓)           ┊ GC (median):    0.00%
+ Time  (mean ± σ):   19.489 μs ± 897.990 ns  ┊ GC (mean ± σ):  0.00% ± 0.00%
+                                ↓
+                     ▁▁▃▄▅▅▅▇▆▇▇▆▇▇█▆▄▃▅▂▁                      
+  ▁▁▁▁▁▁▂▂▂▂▃▃▄▄▆▅▇▆████████████████████████▆▆▆▅▅▄▄▃▃▂▂▂▂▂▂▁▁▁ ▄
+  19.1 μs         Histogram: frequency by time         19.8 μs <
+
+ Memory estimate: 32 bytes, allocs estimate: 2.
+```
 """
-function init_equilibrium(𝑓::Vector{𝕋}, ρ::Vector{𝕋}, 𝑢::Vector{𝕋}, 𝑣::Vector{𝕋};
-                          cas::Dict{Symbol, 𝕌},
-                          lat::Dict{Symbol, Dict})::Nothing where {𝕋, 𝕌}
-    vec = lat[:vec]
-    ξx  = vec[:ξx]
-    ξy  = vec[:ξy]
-    for 𝑦 in Base.OneTo(cas[:NY])
-        for 𝑥 in Base.OneTo(cas[:NX])
+function init_equilibrium(𝑓::Array{𝕋, 3}, ρ::Array{𝕋, 2}, 𝑢::Array{𝕋, 2}, 𝑣::Array{𝕋, 2};
+                          latvec::Dict{Symbol, Vector{𝕋}})::Nothing where 𝕋
+    ξx  = latvec[:ξx]
+    ξy  = latvec[:ξy]
+    w   = latvec[:w]
+    for 𝑦 in axes(𝑓, 2)
+        for 𝑥 in axes(𝑓, 1)
             ϱ, 𝚞, 𝚟 = ρ[𝑥, 𝑦], 𝑢[𝑥, 𝑦], 𝑣[𝑥, 𝑦]
             𝘂𝘂 = 𝚞 * 𝚞 + 𝚟 * 𝚟                      # OP1
-            for 𝑖 in Base.OneTo(lat[:int][:vel])
+            for 𝑖 in axes(𝑓, 3)
                 ξ𝘂 = ξx[𝑖] * 𝚞 + ξy[𝑖] * 𝚟
-                𝑓[𝑥, 𝑦, 𝑖] = lat[:vec][:wi][𝑖] * ϱ * (
+                𝑓[𝑥, 𝑦, 𝑖] = w[𝑖] * ϱ * (
                     + 𝕋(1.0)
                     + 𝕋(3.0) * ξ𝘂
                     + 𝕋(4.5) * ξ𝘂 * ξ𝘂
