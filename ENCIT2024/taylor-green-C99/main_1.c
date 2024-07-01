@@ -54,11 +54,11 @@ void taylor_green(unsigned int t, unsigned int x, unsigned int y, double *r, dou
     *v = uy;
 }
 
-void taylor_green(unsigned int t, double *r, double *u, double *v) {
+void taylor_green2(unsigned int t, double *r, double *u, double *v) {
     for(unsigned int y = 0; y < NY; ++y)
     for(unsigned int x = 0; x < NX; ++x) {
         size_t sidx = scalar_index(x,y);
-	taylor_green(t,x,y,&r(sidx),&u(sidx),&v(sidx));
+	taylor_green(t,x,y,&r[sidx],&u[sidx],&v[sidx]);
     }
 }
 
@@ -149,7 +149,7 @@ int main (int argc, char* argv[]){
     double *uy = (double*) malloc(mem_size_scalar);
 
     // Compute Taylor-Green flow at t = 0 to initialise rho, ux, uy fields
-    taylor_green(0,rho,ux,uy);
+    taylor_green2(0,rho,ux,uy);
 
     // Initialise f1 as equilibrium for rho, ux, uy
     init_equilibrium(f1,rho,ux,uy);
