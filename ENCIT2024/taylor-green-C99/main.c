@@ -33,7 +33,7 @@ extern inline size_t scalar_index(unsigned int x, unsigned int y) {
     return (size_t)(NX) * (size_t)(y) + (size_t)(x);
 }
 extern inline size_t field_index(unsigned int x, unsigned int y, unsigned int d) {
-    return (size_t)(NX) * ((size_t)(NY) * (size_t)(d) + (size_t)(y)) + (size_t)(x);
+    return (size_t)(ndir) * ((size_t)(NX) * (size_t)(y) + (size_t)(x)) + (size_t)(d);
 }
 
 // Taylor-Green Functions
