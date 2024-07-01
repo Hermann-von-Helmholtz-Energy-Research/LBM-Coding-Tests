@@ -29,10 +29,10 @@ const double rho0 = 1;
 const unsigned int NSTEPS = 204800 / scale / scale;
 
 // Index Functions
-inline size_t scalar_index(unsigned int x, unsigned int y) {
+extern inline size_t scalar_index(unsigned int x, unsigned int y) {
     return (size_t)(NX) * (size_t)(y) + (size_t)(x);
 }
-inline size_t field_index(unsigned int x, unsigned int y, unsigned int d) {
+extern inline size_t field_index(unsigned int x, unsigned int y, unsigned int d) {
     return (size_t)(NX) * ((size_t)(NY) * (size_t)(d) + (size_t)(y)) + (size_t)(x);
 }
 
