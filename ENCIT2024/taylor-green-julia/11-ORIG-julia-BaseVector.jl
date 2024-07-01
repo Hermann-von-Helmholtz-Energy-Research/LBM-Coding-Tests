@@ -155,4 +155,34 @@ function taylor_green_sq(t::𝕋, x::𝕌, y::𝕌;
     return ρ, 𝚞, 𝚟
 end
 
+"""
+```
+init_equilibrium()
+```\n
+Function to initialise an equilibrium particle population `f` with provided `ρ, 𝑢, 𝑣`
+macroscopic fields.
+"""
+function init_equilibrium(𝑓::Vector{𝕋}, ρ::Vector{𝕋}, 𝑢::Vector{𝕋}, 𝑣::Vector{𝕋};
+                          cas::Dict{Symbol, 𝕌},
+                          lat::Dict{Symbol, Dict})::Nothing where {𝕋, 𝕌}
+    vec = lat[:vec]
+    ξx  = vec[:ξx]
+    ξy  = vec[:ξy]
+    for 𝑦 in Base.OneTo(cas[:NY])
+        for 𝑥 in Base.OneTo(cas[:NX])
+            ϱ, 𝚞, 𝚟 = ρ[𝑥, 𝑦], 𝑢[𝑥, 𝑦], 𝑣[𝑥, 𝑦]
+            𝘂𝘂 = 𝚞 * 𝚞 + 𝚟 * 𝚟                      # OP1
+            for 𝑖 in Base.OneTo(lat[:int][:vel])
+                ξ𝘂 = ξx[𝑖] * 𝚞 + ξy[𝑖] * 𝚟
+                𝑓[𝑥, 𝑦, 𝑖] = lat[:vec][:wi][𝑖] * ϱ * (
+                    + 𝕋(1.0)
+                    + 𝕋(3.0) * ξ𝘂
+                    + 𝕋(4.5) * ξ𝘂 * ξ𝘂
+                    - 𝕋(1.5) * 𝘂𝘂
+                )
+            end
+        end
+    end
+end
+
 
