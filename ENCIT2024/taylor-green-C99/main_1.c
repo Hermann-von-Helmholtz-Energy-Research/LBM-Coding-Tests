@@ -1,5 +1,9 @@
 /* Includes */
 #include <stdlib.h>
+#include <math.h>
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
 
 /* Lattice */
 const unsigned int scale = 1; /* multiples of 2 up to 64 */
@@ -7,7 +11,7 @@ const unsigned int NX = 32 * scale;
 const unsigned int NY = NX;
 const unsigned int ndir = 9; /* D2Q9 */
 const size_t mem_size_ndir = sizeof(double) * NX * NY * ndir;
-const size_t mem_size_scalar = sizeof(double * NX * NY;
+const size_t mem_size_scalar = sizeof(double) * NX * NY;
 // Weights
 const double w0 = 4/9;    // zero weight
 const double ws = 1/9;    // adjacent weight
@@ -28,22 +32,21 @@ const unsigned int NSTEPS = 204800 / scale / scale;
 inline size_t scalar_index(unsigned int x, unsigned int y) {
     return (size_t)(NX) * (size_t)(y) + (size_t)(x);
 }
-inline size_t field_index(unsigned int x, unsigned int y, unsigned ind d) {
+inline size_t field_index(unsigned int x, unsigned int y, unsigned int d) {
     return (size_t)(NX) * ((size_t)(NY) * (size_t)(d) + (size_t)(y)) + (size_t)(x);
 }
 
 // Taylor-Green Functions
-void taylor_green(unsigned int t, unsigned int x, unsigned int y, double *r,
-                    double *u, double *v) {
+void taylor_green(unsigned int t, unsigned int x, unsigned int y, double *r, double *u, double *v) {
     double kx = 2 * M_PI/NX;
     double ky = 2 * M_PI/NY;
-    double td = 1/(nu * (kx * kx * ky * ky);
+    double td = 1/(nu * (kx * kx * ky * ky));
 
     double X = x + 0.5;
     double Y = y + 0.5;
     double ux = -u_max * sqrt(ky/kx) * cos(kx*X) * sin(ky*Y) * exp(-1*t/td);
     double uy = u_max * sqrt(kx/ky) * sin(kx*X) * cos(ky*Y) * exp(-1*t/td);
-    double P = -0.25*rho0*u_max*u_max*((ky/kx)*cos(2*kx*X)+(kx/ky)*cos(2*ky*Y))*exp(-2*t/td)
+    double P = -0.25*rho0*u_max*u_max*((ky/kx)*cos(2*kx*X)+(kx/ky)*cos(2*ky*Y))*exp(-2*t/td);
     double rho = rho0 + 3 * P;
 
     *r = rho;
@@ -69,22 +72,22 @@ void init_equilibrium(double *f, double *r, double *u, double *v) {
 
 	    for(unsigned int i = 0; i < ndir; ++i) {
 	        double cidotu = dirx[i] * ux + diry[i] * uy;
-	        f[field_index(x,y,i)] = wi[i] * rho * {1 + 3 * cidotu + 4.5 * cidoty * cidotu - 1.5 * (ux*ux+uy*uy));
+	        f[field_index(x,y,i)] = wi[i] * rho * (1 + 3 * cidotu + 4.5 * cidotu * cidotu - 1.5 * (ux*ux+uy*uy));
             }
         }
     }
 }
 
 // Stream function
-void stream(double *f_src, double f_dst) {
+void stream(double *f_src, double *f_dst) {
     for(unsigned int y = 0; y < NY; ++y) {
 	for(unsigned int x = 0; x < NX; ++x) {
 	    for(unsigned int i = 0; i < ndir; ++i) {
 		// enforce periodicity, add NX to ensure that value is positive
 		unsigned int xmd = (NX + x - dirx[i]) %NX;
-		unsigned int ymx = (NY + y - diry[i]) %NY;
+		unsigned int ymd = (NY + y - diry[i]) %NY;
 
-		f_dst[field_index(x,y,i)] = f_src[field_index{xmd,ymd,i)];
+		f_dst[field_index(x,y,i)] = f_src[field_index(xmd,ymd,i)];
             }
 	}
     }
@@ -96,7 +99,7 @@ void compute_rho_u(double *f, double *r, double *u, double *v) {
 	for(unsigned int x = 0; x < NX; ++x) {
 	    double rho = 0;
 	    double ux = 0;
-	    double ut = 0;
+	    double uy = 0;
 
 	    for(unsigned int i = 0; i < ndir; ++i) {
 		rho += f[field_index(x,y,i)];

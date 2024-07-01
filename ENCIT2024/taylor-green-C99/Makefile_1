@@ -2,14 +2,14 @@ PREFIX=main_1
 OUTPUT=taylorGreenVortex
 
 ${OUTPUT}-0: ${PREFIX}.c
-	gcc -std=c99 -O0 -o "${OUTPUT}-0" ${PREFIX}.c
+	gcc -std=c99 -O0 -o "${OUTPUT}-0" ${PREFIX}.c -lm
 
 ${OUTPUT}-1: ${PREFIX}.c
-	gcc -std=c99 -O1 -o "${OUTPUT}-1" ${PREFIX}.c
+	gcc -std=c99 -O1 -o "${OUTPUT}-1" ${PREFIX}.c -lm
 
 ${OUTPUT}-3: ${PREFIX}.c
-	gcc -std=c99 -O3 -o "${OUTPUT}-3" ${PREFIX}.c
+	gcc -std=c99 -O3 -o "${OUTPUT}-3" ${PREFIX}.c -lm
 
 ${OUTPUT}-fast: ${PREFIX}.c
-	gcc -std=c99 -Ofast -o "${OUTPUT}-fast" ${PREFIX}.c
+	gcc -std=c99 -Ofast -o "${OUTPUT}-fast" ${PREFIX}.c -lm
 
