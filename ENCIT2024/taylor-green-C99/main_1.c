@@ -33,7 +33,7 @@ extern inline size_t scalar_index(unsigned int x, unsigned int y) {
     return (size_t)(NX) * (size_t)(y) + (size_t)(x);
 }
 extern inline size_t field_index(unsigned int x, unsigned int y, unsigned int d) {
-    return (size_t)(NX) * ((size_t)(NY) * (size_t)(d) + (size_t)(y)) + (size_t)(x);
+    return (size_t)(ndir) * ((size_t)(NX) * (size_t)(y) + (size_t)(x)) + (size_t)(d);
 }
 
 // Taylor-Green Functions
@@ -69,10 +69,10 @@ void init_equilibrium(double *f, double *r, double *u, double *v) {
       	    double rho = r[scalar_index(x,y)];
 	    double ux = u[scalar_index(x,y)];
 	    double uy = v[scalar_index(x,y)];
-
+        double uu = ux*ux + uy*uy;
 	    for(unsigned int i = 0; i < ndir; ++i) {
 	        double cidotu = dirx[i] * ux + diry[i] * uy;
-	        f[field_index(x,y,i)] = wi[i] * rho * (1 + 3 * cidotu + 4.5 * cidotu * cidotu - 1.5 * (ux*ux+uy*uy));
+	        f[field_index(x,y,i)] = wi[i] * rho * (1.0 + 3.0*cidotu + 4.5*cidotu*cidotu - 1.5*uu);
             }
         }
     }
@@ -120,21 +120,21 @@ void collide(double *f, double *r, double *u, double *v) {
     const double omtauinv = 1 - tauinv;      // 1 - 1/tau
 
     for(unsigned int y = 0; y < NY; ++y) {
-	for(unsigned int x = 0; x < NX; ++x) {
-	    double rho = r[scalar_index(x,y)];
-	    double ux = u[scalar_index(x,y)];
-	    double uy = v[scalar_index(x,y)];
+        for(unsigned int x = 0; x < NX; ++x) {
+            double rho = r[scalar_index(x,y)];
+            double ux = u[scalar_index(x,y)];
+            double uy = v[scalar_index(x,y)];
+            double uu = ux*ux + uy*uy;
+            for(unsigned int i = 0; i < ndir; ++i) {
+                // calculate dot product
+                double cidotu = dirx[i] * ux + diry[i] * uy;
+                // calculate equilibrium
+                double feq = wi[i] * rho * (1.0 + 3.0*cidotu + 4.5*cidotu*cidotu - 1.5*uu);
 
-	    for(unsigned int i = 0; i < ndir; ++i) {
-		// calculate dot product
-		double cidotu = dirx[i] * ux + diry[i] * uy;
-		// calculate equilibrium
-		double feq = wi[i] * rho * (1 + 3*cidotu + 4.5*cidotu*cidotu - 1.5*(ux*ux + uy*uy));
-
-		// relax to equilibrium
-		f[field_index(x,y,i)] = omtauinv*f[field_index(x,y,i)] + tauinv * feq;
-	    }
-	}
+                // relax to equilibrium
+                f[field_index(x,y,i)] = omtauinv*f[field_index(x,y,i)] + tauinv * feq;
+            }
+        }
     }
 }
 
