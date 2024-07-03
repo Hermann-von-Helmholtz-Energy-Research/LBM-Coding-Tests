@@ -10,63 +10,61 @@
 #----------------------------------------------------------------------------------------------#
 
 """
-`init(ℙ::Type{<:AbstractFloat}, l::Int)::Dict{Symbol, Dict}`\n
+`init(_::Type{𝕋} where 𝕋<:AbstractFloat, l::Int)::Dict{Symbol, Dict}`\n
 Computes (i) types, (ii) case, (iii) lattice, and (iv) properties simulation parameters, and
 returns as a `Dict{Symbol, Dict}`.
 
 ```julia-REPL
 julia> @benchmark init(Float64, 0)
 BenchmarkTools.Trial: 10000 samples with 10 evaluations.
- Range (min … max):  1.478 μs … 323.095 μs  ┊ GC (min … max):  0.00% … 97.87%
- Time  (median):     1.558 μs (↓)           ┊ GC (median):     0.00%
- Time  (mean ± σ):   1.798 μs ±   6.372 μs  ┊ GC (mean ± σ):  10.97% ±  3.24%
-              ↓
-        ▄▆▇██▇▆▅▄▄▂▁▁
-  ▂▃▃▅▆██████████████▇▇▅▄▄▃▂▂▂▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁ ▃
-  1.48 μs         Histogram: frequency by time        1.87 μs <
+ Range (min … max):  1.471 μs … 318.741 μs  ┊ GC (min … max):  0.00% … 98.32%
+ Time  (median):     1.543 μs (↓)           ┊ GC (median):     0.00%
+ Time  (mean ± σ):   1.783 μs ±   6.386 μs  ┊ GC (mean ± σ):  11.12% ±  3.24%
+             ↓
+        ▃▅▇█▇▅▃▃▂▁▁                                  
+  ▁▁▂▂▅▇███████████▇▆▅▄▃▃▂▂▂▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁ ▃
+  1.47 μs         Histogram: frequency by time        1.84 μs <
 
  Memory estimate: 4.91 KiB, allocs estimate: 50.
 ```
 """
-function init(ℙ::Type{𝕋} where 𝕋<:AbstractFloat,    # The floating point precision
-              l::Int)                               # log2(scale)
-    𝕀, 𝕌    = ℙ == Float64 ? (Int64, UInt64) : (Int32, UInt32)
-    scale   = 𝕌(1) << l
-    chunk   = 𝕌(32)
-    maxIt   = 𝕌(204800)
+function init(_::Type{𝕋}, l::Int)::Dict{Symbol, Dict} where 𝕋<:AbstractFloat
+    𝕀       = 𝕋 == Float64 ? Int64 : Int32
+    scale   = 𝕀(1) << l
+    chunk   = 𝕀(32)
+    maxIt   = 𝕀(204800)
     NY = NX = scale * chunk
-    nu      = ℙ(1.0/6.0)
-    w0, w1, w2 = ℙ(4.0/9.0), ℙ(1.0/9.0), ℙ(1.0/36.0)
+    nu      = 𝕋(1.0/6.0)
+    w0, w1, w2 = 𝕋(4.0/9.0), 𝕋(1.0/9.0), 𝕋(1.0/36.0)
     return Dict{Symbol, Dict}(
         # Types
         :typ => Dict{Symbol, DataType}(
             :i   => 𝕀,
-            :u   => 𝕌,
-            :p   => ℙ,
+            :f   => 𝕋,
         ),
         # Case parameters
-        :cas => Dict{Symbol, 𝕌}(
+        :cas => Dict{Symbol, 𝕀}(
             :sca => scale,
             :NX  => NX,
             :NY  => NY,
-            :IT  => 𝕌(round(maxIt / scale / scale)),
+            :IT  => 𝕀(round(maxIt / scale / scale)),
         ),
         # Lattice Stencil
         :lat => Dict{Symbol, Dict}(
-            :int => Dict{Symbol, 𝕌}(:dim => 𝕌(2), :vel => 𝕌(9)),
-            :flo => Dict{Symbol, ℙ}(:a => √ℙ(3.0/2.0), :cs => inv(√ℙ(3.0))),
-            :vec => Dict{Symbol, Vector{ℙ}}(
-                :w   => ℙ[w0, w1, w1, w1, w1, w2, w2, w2, w2],
-                :ξx  => ℙ[+0, +1, +0, -1, +0, +1, -1, -1, +1],  # ℙ*ℙ ⋗ ℙ*𝕀 1.43×
-                :ξy  => ℙ[+0, +0, +1, +0, -1, +1, +1, -1, -1],
+            :int => Dict{Symbol, 𝕀}(:dim => 𝕀(2), :vel => 𝕀(9)),
+            :flo => Dict{Symbol, 𝕋}(:a => √𝕋(3.0/2.0), :cs => inv(√𝕋(3.0))),
+            :vec => Dict{Symbol, Vector{𝕋}}(
+                :w   => 𝕋[w0, w1, w1, w1, w1, w2, w2, w2, w2],
+                :ξx  => 𝕋[+0, +1, +0, -1, +0, +1, -1, -1, +1],  # 𝕋*𝕋 ⋗ 𝕋*𝕀 1.43×
+                :ξy  => 𝕋[+0, +0, +1, +0, -1, +1, +1, -1, -1],
             ),
         ),
         # Properties
-        :pro => Dict{Symbol, ℙ}(
+        :pro => Dict{Symbol, 𝕋}(
             :ν      => nu,
-            :τ      => ℙ(3nu + 0.5),
-            :u_max  => ℙ(0.04 / scale),
-            :ρ₀     => one(ℙ),
+            :τ      => 𝕋(3nu + 0.5),
+            :u_max  => 𝕋(0.04 / scale),
+            :ρ₀     => one(𝕋),
         ),
     )
 end
@@ -78,9 +76,9 @@ end
 
 """
 ```
-taylor_green(t::𝕋, x::𝕌, y::𝕌;
-             cas::Dict{Symbol, 𝕌},
-             pro::Dict{Symbol, 𝕋})::NTuple{3, 𝕋} where {𝕋, 𝕌}```\n
+taylor_green(t::𝕋, x::𝕀, y::𝕀;
+             cas::Dict{Symbol, 𝕀},
+             pro::Dict{Symbol, 𝕋})::NTuple{3, 𝕋} where {𝕋, 𝕀}```\n
 Function to compute the exact solution for Taylor-Green vortex decay.
 
 ```julia-REPL
@@ -103,9 +101,9 @@ BenchmarkTools.Trial: 10000 samples with 1000 evaluations.
  Memory estimate: 96 bytes, allocs estimate: 3.
 ```
 """
-function taylor_green(t::𝕋, x::𝕌, y::𝕌;
-                      cas::Dict{Symbol, 𝕌},
-                      pro::Dict{Symbol, 𝕋})::NTuple{3, 𝕋} where {𝕋, 𝕌}
+function taylor_green(t::𝕋, x::𝕀, y::𝕀;
+                      cas::Dict{Symbol, 𝕀},
+                      pro::Dict{Symbol, 𝕋})::NTuple{3, 𝕋} where {𝕋, 𝕀}
     𝐍𝐱  = cas[:NX]
     𝐍𝐲  = cas[:NY]
     ϱ   = pro[:ρ₀]
@@ -129,8 +127,8 @@ function taylor_green(t::𝕋, x::𝕌, y::𝕌;
 end
 
 function taylor_green(t::𝕋, ρ::Array{𝕋, 2}, 𝑢::Array{𝕋, 2}, 𝑣::Array{𝕋, 2};
-                      cas::Dict{Symbol, 𝕌},
-                      pro::Dict{Symbol, 𝕋})::Nothing where {𝕋, 𝕌}
+                      cas::Dict{Symbol, 𝕀},
+                      pro::Dict{Symbol, 𝕋})::Nothing where {𝕋, 𝕀}
     for j in axes(ρ, 2)
         for i in axes(ρ, 1)
             ρ[i, j], 𝑢[i, j], 𝑣[i, j] = taylor_green(t, i, j, cas=cas, pro=pro)
@@ -140,9 +138,9 @@ end
 
 """
 ```
-taylor_green_sq(t::𝕋, x::𝕌, y::𝕌;
-                cas::Dict{Symbol, 𝕌},
-                pro::Dict{Symbol, 𝕋})::NTuple{3, 𝕋} where {𝕋, 𝕌}```\n
+taylor_green_sq(t::𝕋, x::𝕀, y::𝕀;
+                cas::Dict{Symbol, 𝕀},
+                pro::Dict{Symbol, 𝕋})::NTuple{3, 𝕋} where {𝕋, 𝕀}```\n
 Function to compute the exact solution for Taylor-Green vortex decay in a square domain.
 
 ```julia-REPL
@@ -165,9 +163,9 @@ BenchmarkTools.Trial: 10000 samples with 200 evaluations.
  Memory estimate: 96 bytes, allocs estimate: 3.
 ```
 """
-function taylor_green_sq(t::𝕋, x::𝕌, y::𝕌;
-                         cas::Dict{Symbol, 𝕌},
-                         pro::Dict{Symbol, 𝕋})::NTuple{3, 𝕋} where {𝕋, 𝕌}
+function taylor_green_sq(t::𝕋, x::𝕀, y::𝕀;
+                         cas::Dict{Symbol, 𝕀},
+                         pro::Dict{Symbol, 𝕋})::NTuple{3, 𝕋} where {𝕋, 𝕀}
     𝐍   = cas[:NX]
     ϱ   = pro[:ρ₀]
     𝟐   = 𝕋(2.0)
