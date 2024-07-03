@@ -15,20 +15,22 @@ Computes (i) types, (ii) case, (iii) lattice, and (iv) properties simulation par
 returns as a `Dict{Symbol, Dict}`.
 
 ```julia-REPL
+julia> using BenchmarkTools
+julia> include("./11-ORIG-julia-BaseVector.jl");
 julia> @benchmark init(Float64, 0)
-BenchmarkTools.Trial: 10000 samples with 10 evaluations.
- Range (min … max):  1.471 μs … 318.741 μs  ┊ GC (min … max):  0.00% … 98.32%
- Time  (median):     1.543 μs (↓)           ┊ GC (median):     0.00%
- Time  (mean ± σ):   1.783 μs ±   6.386 μs  ┊ GC (mean ± σ):  11.12% ±  3.24%
-             ↓
-        ▃▅▇█▇▅▃▃▂▁▁                                  
-  ▁▁▂▂▅▇███████████▇▆▅▄▃▃▂▂▂▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁ ▃
-  1.47 μs         Histogram: frequency by time        1.84 μs <
+BenchmarkTools.Trial: 10000 samples with 949 evaluations.
+ Range (min … max):   97.034 ns …  1.807 μs  ┊ GC (min … max): 0.00% … 92.40%
+ Time  (median):     106.483 ns (↓)          ┊ GC (median):    0.00%
+ Time  (mean ± σ):   108.382 ns ± 26.571 ns  ┊ GC (mean ± σ):  1.32% ±  5.03%
+              ↓
+          ▁▄▇██▇▄▂▁▁                                           ▂
+  ▆▅▁▄▇▆▇▇████████████▇▆▄▃▁▄▄▅▅▆▅▄▁▁▄▄▁▅▄▄▄▁▄▄▁▁▃▅▄▁▄▃▄▃▁▄▁▆▃▄ █
+  97 ns         Histogram: log(frequency) by time       145 ns <
 
- Memory estimate: 4.91 KiB, allocs estimate: 50.
+ Memory estimate: 384 bytes, allocs estimate: 3.
 ```
 """
-function init(_::Type{𝕋}, l::Int)::Dict{Symbol, Dict} where 𝕋<:AbstractFloat
+function init(_::Type{𝕋}, l::Int)::NamedTuple where 𝕋<:AbstractFloat
     𝕀       = 𝕋 == Float64 ? Int64 : Int32
     scale   = 𝕀(1) << l
     chunk   = 𝕀(32)
@@ -36,36 +38,14 @@ function init(_::Type{𝕋}, l::Int)::Dict{Symbol, Dict} where 𝕋<:AbstractFlo
     NY = NX = scale * chunk
     nu      = 𝕋(1.0/6.0)
     w0, w1, w2 = 𝕋(4.0/9.0), 𝕋(1.0/9.0), 𝕋(1.0/36.0)
-    return Dict{Symbol, Dict}(
-        # Types
-        :typ => Dict{Symbol, DataType}(
-            :i   => 𝕀,
-            :f   => 𝕋,
-        ),
-        # Case parameters
-        :cas => Dict{Symbol, 𝕀}(
-            :sca => scale,
-            :NX  => NX,
-            :NY  => NY,
-            :IT  => 𝕀(round(maxIt / scale / scale)),
-        ),
-        # Lattice Stencil
-        :lat => Dict{Symbol, Dict}(
-            :int => Dict{Symbol, 𝕀}(:dim => 𝕀(2), :vel => 𝕀(9)),
-            :flo => Dict{Symbol, 𝕋}(:a => √𝕋(3.0/2.0), :cs => inv(√𝕋(3.0))),
-            :vec => Dict{Symbol, Vector{𝕋}}(
-                :w   => 𝕋[w0, w1, w1, w1, w1, w2, w2, w2, w2],
-                :ξx  => 𝕋[+0, +1, +0, -1, +0, +1, -1, -1, +1],  # 𝕋*𝕋 ⋗ 𝕋*𝕀 1.43×
-                :ξy  => 𝕋[+0, +0, +1, +0, -1, +1, +1, -1, -1],
-            ),
-        ),
-        # Properties
-        :pro => Dict{Symbol, 𝕋}(
-            :ν      => nu,
-            :τ      => 𝕋(3nu + 0.5),
-            :u_max  => 𝕋(0.04 / scale),
-            :ρ₀     => one(𝕋),
-        ),
+    return (
+        typ=(i=𝕀, f=𝕋),
+        cas=(sca=scale, NX=NX, NY=NY, IT=𝕀(round(maxIt / scale / scale))),
+        lat=(int=(dim=𝕀(2), vel=𝕀(9)), flo=(a=√𝕋(3.0/2.0), cs=inv(√𝕋(3.0))),
+            vec=(w=𝕋[w0, w1, w1, w1, w1, w2, w2, w2, w2],
+                 ξx=𝕋[+0, +1, +0, -1, +0, +1, -1, -1, +1],  # 𝕋*𝕋 ⋗ 𝕋*𝕀 1.43×
+                 ξy=𝕋[+0, +0, +1, +0, -1, +1, +1, -1, -1])),
+        pro=(ν=nu, τ=𝕋(3.0nu + 0.5), u_max=𝕋(0.04 / scale), ρ₀=one(𝕋))
     )
 end
 
@@ -82,21 +62,21 @@ taylor_green(t::𝕋, x::𝕀, y::𝕀;
 Function to compute the exact solution for Taylor-Green vortex decay.
 
 ```julia-REPL
-julia> using BenchmarkTools, Unitful
+julia> using BenchmarkTools
 julia> include("./11-ORIG-julia-BaseVector.jl");
 julia> par = init(Float64, 0);
-julia> b = @benchmarkable taylor_green(par[:typ][:p](0.0), UInt64(17), UInt64(17), cas=par[:cas], pro=par[:pro])
+julia> b = @benchmarkable taylor_green(par[:typ][:f](0.0), 17, 17, cas=par[:cas], pro=par[:pro])
 julia> b.params.evals = 1000;
 julia> b.params.seconds = 25.0;
 julia> run(b)
 BenchmarkTools.Trial: 10000 samples with 1000 evaluations.
- Range (min … max):  405.070 ns …  3.032 μs  ┊ GC (min … max): 0.00% … 85.20%
- Time  (median):     407.949 ns (↓)          ┊ GC (median):    0.00%
- Time  (mean ± σ):   410.327 ns ± 48.111 ns  ┊ GC (mean ± σ):  0.45% ±  2.96%
+ Range (min … max):  402.291 ns …  5.000 μs  ┊ GC (min … max): 0.00% … 90.38%
+ Time  (median):     406.224 ns (↓)          ┊ GC (median):    0.00%
+ Time  (mean ± σ):   408.774 ns ± 61.312 ns  ┊ GC (mean ± σ):  0.42% ±  2.68%
         ↓
-       █                                                        
-  ▃▇▃▃▄█▆▄▃▃▃▃▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▁▁▂▂▂▂▂▂▂▂▁▂▁▁▂▂▁▁▁▁▁▁▁▁▁▂▁▂▂▂▂▂▂ ▂
-  405 ns          Histogram: frequency by time          436 ns <
+       █▇    
+  ▂▂▃▅▆██▃▃▃▂▂▂▂▁▂▁▂▂▂▂▂▂▂▂▁▂▂▁▁▁▁▂▂▁▂▂▂▂▂▁▂▁▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂ ▂
+  402 ns          Histogram: frequency by time          442 ns <
 
  Memory estimate: 96 bytes, allocs estimate: 3.
 ```
