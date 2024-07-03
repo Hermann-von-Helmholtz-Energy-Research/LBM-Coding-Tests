@@ -128,6 +128,16 @@ function taylor_green(t::𝕋, x::𝕌, y::𝕌;
     return ρ, 𝚞, 𝚟
 end
 
+function taylor_green(t::𝕋, ρ::Array{𝕋, 2}, 𝑢::Array{𝕋, 2}, 𝑣::Array{𝕋, 2};
+                      cas::Dict{Symbol, 𝕌},
+                      pro::Dict{Symbol, 𝕋})::Nothing where {𝕋, 𝕌}
+    for j in axes(ρ, 2)
+        for i in axes(ρ, 1)
+            ρ[i, j], 𝑢[i, j], 𝑣[i, j] = taylor_green(t, i, j, cas=cas, pro=pro)
+        end
+    end
+end
+
 """
 ```
 taylor_green_sq(t::𝕋, x::𝕌, y::𝕌;
