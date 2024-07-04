@@ -69,6 +69,16 @@ julia> b = @benchmarkable taylor_green(par.typ.f(0.0), 17, 17; par.cas..., par.p
 julia> b.params.evals = 1000;
 julia> b.params.seconds = 25.0;
 julia> run(b)
+BenchmarkTools.Trial: 10000 samples with 1000 evaluations.
+ Range (min … max):  434.917 ns …   3.102 μs  ┊ GC (min … max): 0.00% … 84.74%
+ Time  (median):     439.934 ns (↓)           ┊ GC (median):    0.00%
+ Time  (mean ± σ):   476.327 ns ± 282.119 ns  ┊ GC (mean ± σ):  7.15% ± 10.03%
+  ↓
+  █▁                                                            ▁
+  ██▅▅▇▄▄▃▁▁▃▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁█ █
+  435 ns        Histogram: log(frequency) by time       2.77 μs <
+
+ Memory estimate: 672 bytes, allocs estimate: 8.
 ```
 """
 function taylor_green(t::𝕋, x::𝕀, y::𝕀;
