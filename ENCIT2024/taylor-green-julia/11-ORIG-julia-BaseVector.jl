@@ -10,14 +10,16 @@
 #----------------------------------------------------------------------------------------------#
 
 """
-`init(_::Type{𝕋} where 𝕋<:AbstractFloat, l::Int)::Dict{Symbol, Dict}`\n
+```
+init(_::Type{𝕋} where 𝕋<:AbstractFloat, l::Int)::Dict{Symbol, Dict}
+```
 Computes (i) types, (ii) case, (iii) lattice, and (iv) properties simulation parameters, and
 returns as a `Dict{Symbol, Dict}`.
 
-```julia-REPL
-julia> using BenchmarkTools
-julia> include("./11-ORIG-julia-BaseVector.jl");
-julia> @benchmark init(Float64, 0)
+```
+> using BenchmarkTools
+> include("./11-ORIG-julia-BaseVector.jl");
+> @benchmark init(Float64, 0)
 BenchmarkTools.Trial: 10000 samples with 949 evaluations.
  Range (min … max):   97.034 ns …  1.807 μs  ┊ GC (min … max): 0.00% … 92.40%
  Time  (median):     106.483 ns (↓)          ┊ GC (median):    0.00%
@@ -56,33 +58,33 @@ end
 
 """
 ```
-taylor_green(t::𝕋, x::𝕀, y::𝕀;
-             cas::NamedTuple,
-             pro::NamedTuple)::NTuple{3, 𝕋} where {𝕋, 𝕀}```\n
+taylor_green(t::𝕋, x::𝕀, y::𝕀, NX::𝕀, NY::𝕀;
+             ν::𝕋, τ::𝕋, u_max::𝕋, ρ₀::𝕋)::NTuple{3, 𝕋} where {𝕋, 𝕀}
+```
 Function to compute the exact solution for Taylor-Green vortex decay.
 
-```julia-REPL
-julia> using BenchmarkTools
-julia> include("./11-ORIG-julia-BaseVector.jl");
-julia> par = init(Float64, 0);
-julia> b = @benchmarkable taylor_green(par.typ.f(0.0), 17, 17; par.cas..., par.pro...)
-julia> b.params.evals = 1000;
-julia> b.params.seconds = 25.0;
-julia> run(b)
+```
+> using BenchmarkTools;
+> include("./11-ORIG-julia-BaseVector.jl");
+> par = init(Float64, 0);
+> t = par.typ.f(0.0); NX = par.cas.NX; NY = par.cas.NY; pro = par.pro;
+> b = @benchmarkable taylor_green(t, 17, 17, NX, NY; \$pro...);
+> b.params.evals = 1000;
+> b.params.seconds = 25.0;
+> run(b)
 BenchmarkTools.Trial: 10000 samples with 1000 evaluations.
- Range (min … max):  434.917 ns …   3.102 μs  ┊ GC (min … max): 0.00% … 84.74%
- Time  (median):     439.934 ns (↓)           ┊ GC (median):    0.00%
- Time  (mean ± σ):   476.327 ns ± 282.119 ns  ┊ GC (mean ± σ):  7.15% ± 10.03%
-  ↓
-  █▁                                                            ▁
-  ██▅▅▇▄▄▃▁▁▃▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁█ █
-  435 ns        Histogram: log(frequency) by time       2.77 μs <
+ Range (min … max):  67.514 ns …  3.383 μs  ┊ GC (min … max): 0.00% … 96.89%
+ Time  (median):     69.805 ns (↓)          ┊ GC (median):    0.00%
+ Time  (mean ± σ):   75.194 ns ± 89.412 ns  ┊ GC (mean ± σ):  4.74% ±  3.94%
+     ↓
+  ▆▄██▄▂                                                      ▁
+  ███████▆▅▅▄▄▅▂▄▄▆▆▇███▇▇▆▅▄▄▅▅▅▅▄▃▄▅▅▇▇▇▇▅▅▅▅▆▄▄▅▅▆▂▅▆▇▅▆▆▆ █
+  67.5 ns      Histogram: log(frequency) by time       114 ns <
 
- Memory estimate: 672 bytes, allocs estimate: 8.
+ Memory estimate: 80 bytes, allocs estimate: 2.
 ```
 """
-function taylor_green(t::𝕋, x::𝕀, y::𝕀;
-                      sca::𝕀, NX::𝕀, NY::𝕀, IT::𝕀,
+function taylor_green(t::𝕋, x::𝕀, y::𝕀, NX::𝕀, NY::𝕀;
                       ν::𝕋, τ::𝕋, u_max::𝕋, ρ₀::𝕋)::NTuple{3, 𝕋} where {𝕋, 𝕀}
     𝟐   = 𝕋(2.0)
     𝟐𝛑  = 𝟐 * π
@@ -103,12 +105,41 @@ function taylor_green(t::𝕋, x::𝕀, y::𝕀;
     return ρ, 𝚞, 𝚟
 end
 
-function taylor_green(t::𝕋, ρ::Array{𝕋, 2}, 𝑢::Array{𝕋, 2}, 𝑣::Array{𝕋, 2};
-                      cas::Dict{Symbol, 𝕀},
-                      pro::Dict{Symbol, 𝕋})::Nothing where {𝕋, 𝕀}
+"""
+```
+taylor_green(t::𝕋, ρ::Array{𝕋, 2}, 𝑢::Array{𝕋, 2}, 𝑣::Array{𝕋, 2}, NX::𝕀, NY::𝕀;
+             pro::NamedTuple)::Nothing where {𝕋, 𝕀}
+```
+Function to compute the exact solution for Taylor-Green vortex in FIELDS (ρ, 𝑢, 𝑣).
+
+```
+> using BenchmarkTools;
+> include("./11-ORIG-julia-BaseVector.jl");
+> par = init(Float64, 0);
+> t = par.typ.f(0.0); NX = par.cas.NX; NY = par.cas.NY; pro = par.pro;
+> ρ = Array{Float64, 2}(undef, 32, 32);
+> 𝑢 = Array{Float64, 2}(undef, 32, 32);
+> 𝑣 = Array{Float64, 2}(undef, 32, 32);
+> B = @benchmarkable taylor_green(t, ρ, 𝑢, 𝑣, NX, NY; pro=\$pro)
+> tune!(B)
+> run(B)
+BenchmarkTools.Trial: 10000 samples with 1 evaluation.
+ Range (min … max):  35.970 μs … 78.185 μs  ┊ GC (min … max): 0.00% … 0.00%
+ Time  (median):     36.195 μs (↓)          ┊ GC (median):    0.00%
+ Time  (mean ± σ):   36.660 μs ±  3.068 μs  ┊ GC (mean ± σ):  0.00% ± 0.00%
+   ↓
+  █▇                                                          ▁
+  ███▇▆▇▆▅▁█▇▆▅▅▄▃▄▁▃▁▁▁▃▁▁▁▁▁▁▁▁▁▁▁▁▁▁▃▁▁▁▁▁▁▁▁▁▅▆▇▇▅▅▅▄▅▆▇▇ █
+  36 μs        Histogram: log(frequency) by time      51.4 μs <
+
+ Memory estimate: 48 bytes, allocs estimate: 1.
+```
+"""
+function taylor_green(t::𝕋, ρ::Array{𝕋, 2}, 𝑢::Array{𝕋, 2}, 𝑣::Array{𝕋, 2}, NX::𝕀, NY::𝕀;
+                      pro::NamedTuple)::Nothing where {𝕋, 𝕀}
     for j in axes(ρ, 2)
         for i in axes(ρ, 1)
-            ρ[i, j], 𝑢[i, j], 𝑣[i, j] = taylor_green(t, i, j, cas=cas, pro=pro)
+            ρ[i, j], 𝑢[i, j], 𝑣[i, j] = taylor_green(t, i, j, NX, NY; pro...)
         end
     end
 end
@@ -117,50 +148,88 @@ end
 ```
 taylor_green_sq(t::𝕋, x::𝕀, y::𝕀;
                 cas::Dict{Symbol, 𝕀},
-                pro::Dict{Symbol, 𝕋})::NTuple{3, 𝕋} where {𝕋, 𝕀}```\n
+                pro::Dict{Symbol, 𝕋})::NTuple{3, 𝕋} where {𝕋, 𝕀}
+```
 Function to compute the exact solution for Taylor-Green vortex decay in a square domain.
 
-```julia-REPL
-julia> using BenchmarkTools, Unitful
-julia> include("./11-ORIG-julia-BaseVector.jl");
-julia> par = init(Float64, 0);
-julia> 𝑏 = @benchmarkable taylor_green_sq(par[:typ][:p](0.0), UInt64(17), UInt64(17), cas=par[:cas], pro=par[:pro]);
-julia> 𝑏.params.evals = 1000;
-julia> 𝑏.params.seconds = 25.0;
-julia> run(𝑏)
-BenchmarkTools.Trial: 10000 samples with 200 evaluations.
- Range (min … max):  399.807 ns …  2.559 μs  ┊ GC (min … max): 0.00% … 0.00%
- Time  (median):     405.780 ns (↓)          ┊ GC (median):    0.00%
- Time  (mean ± σ):   407.502 ns ± 45.823 ns  ┊ GC (mean ± σ):  0.39% ± 2.95%
-             ↓
-             █   
-  ▂▃▃▃▄█▆▄▄▄██▄▃▂▂▂▂▂▂▁▂▂▂▁▁▂▂▂▂▂▂▂▁▁▂▂▂▂▁▁▁▁▁▁▁▁▁▁▁▁▂▂▂▂▂▂▂▂▂ ▂
-  400 ns          Histogram: frequency by time          434 ns <
+```
+> using BenchmarkTools, Unitful
+> include("./11-ORIG-julia-BaseVector.jl");
+> par = init(Float64, 0);
+> t = par.typ.f(0.0); NX = par.cas.NX; pro = par.pro;
+> 𝑏 = @benchmarkable taylor_green_sq(t, 17, 17, NX; \$pro...);
+> 𝑏.params.evals = 1000;
+> 𝑏.params.seconds = 25.0;
+> run(𝑏)
+BenchmarkTools.Trial: 10000 samples with 1000 evaluations.
+ Range (min … max):  64.539 ns …  3.647 μs  ┊ GC (min … max): 0.00% … 97.39%
+ Time  (median):     66.546 ns (↓)          ┊ GC (median):    0.00%
+ Time  (mean ± σ):   71.032 ns ± 85.556 ns  ┊ GC (mean ± σ):  4.69% ±  3.93%
+     ↓
+  ▅▇▇█▅▂                                                      ▂
+  ████████▇▆▆▆▃▁▃▁▁▁▅▇█▇▇█▇▆▆▅▁▁▅▅▅▅▄▅▄▃▄▅▄▆▇▇▆▅▄▄▄▆▆▆▅▅▆▅▄▃▅ █
+  64.5 ns      Histogram: log(frequency) by time       105 ns <
 
- Memory estimate: 96 bytes, allocs estimate: 3.
+ Memory estimate: 80 bytes, allocs estimate: 2.
 ```
 """
-function taylor_green_sq(t::𝕋, x::𝕀, y::𝕀;
-                         cas::Dict{Symbol, 𝕀},
-                         pro::Dict{Symbol, 𝕋})::NTuple{3, 𝕋} where {𝕋, 𝕀}
-    𝐍   = cas[:NX]
-    ϱ   = pro[:ρ₀]
+function taylor_green_sq(t::𝕋, x::𝕀, y::𝕀, NX::𝕀;
+                         ν::𝕋, τ::𝕋, u_max::𝕋, ρ₀::𝕋)::NTuple{3, 𝕋} where {𝕋, 𝕀}
     𝟐   = 𝕋(2.0)
     𝟐𝛑  = 𝟐 * π
-    k   = 𝟐𝛑 / 𝐍        # promote_type(UInt32, Float##) -> Float##
-    td  = pro[:ν] * 𝟐 * k * k   # 𝟐*k*k ⋗ (k*k+k*k) 2.81x
-    𝐔𝐞  = pro[:u_max] * exp(-t * td)
-    X   = x - 𝐍 / 𝟐     # Centered vortex
-    Y   = y - 𝐍 / 𝟐     # Centered vortex
+    k   = 𝟐𝛑 / NX       # promote_type(UInt32, Float##) -> Float##
+    td  = ν * (k*k + k*k)
+    𝐔𝐞  = u_max * exp(-t * td)
+    X   = x - NX / 𝟐    # Centered vortex
+    Y   = y - NX / 𝟐    # Centered vortex
     sx, cx  = sincos(k * X)
     sy, cy  = sincos(k * Y)
     c2x = cx * cx - sx * sx
     c2y = cy * cy - sy * sy
     𝚞   = - 𝐔𝐞 * cx * sy
     𝚟   = + 𝐔𝐞 * sx * cy
-    P   = - 𝕋(0.25) * ϱ * 𝐔𝐞 * 𝐔𝐞 * (c2x + c2y)
-    ρ   = ϱ + 𝕋(3.0) * P
+    P   = - 𝕋(0.25) * ρ₀ * 𝐔𝐞 * 𝐔𝐞 * (c2x + c2y)
+    ρ   = ρ₀ + 𝕋(3.0) * P
     return ρ, 𝚞, 𝚟
+end
+
+"""
+```
+taylor_green_sq(t::𝕋, ρ::Array{𝕋, 2}, 𝑢::Array{𝕋, 2}, 𝑣::Array{𝕋, 2}, NX::𝕀;
+                pro::NamedTuple)::Nothing where {𝕋, 𝕀}
+```
+Function to compute the exact solution for Taylor-Green vortex in square FIELDS (ρ, 𝑢, 𝑣).
+
+```
+> using BenchmarkTools;
+> include("./11-ORIG-julia-BaseVector.jl");
+> par = init(Float64, 0);
+> t = par.typ.f(0.0); NX = par.cas.NX; pro = par.pro;
+> ρ = Array{Float64, 2}(undef, 32, 32);
+> 𝑢 = Array{Float64, 2}(undef, 32, 32);
+> 𝑣 = Array{Float64, 2}(undef, 32, 32);
+> B = @benchmarkable taylor_green_sq(t, ρ, 𝑢, 𝑣, NX; pro=\$pro)
+> tune!(B)
+> run(B)
+BenchmarkTools.Trial: 10000 samples with 1 evaluation.
+ Range (min … max):  34.185 μs … 79.878 μs  ┊ GC (min … max): 0.00% … 0.00%
+ Time  (median):     34.293 μs (↓)          ┊ GC (median):    0.00%
+ Time  (mean ± σ):   34.738 μs ±  3.013 μs  ┊ GC (mean ± σ):  0.00% ± 0.00%
+  ↓
+  █▁                                                          ▁
+  ██▇▆▇▆▆▄▆▇▆▅▄▄▃▄▃▃▁▁▁▁▁▁▁▁▁▃▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▃▁▄▅▆▆▆▅▅▃▅▆▆▆▆ █
+  34.2 μs      Histogram: log(frequency) by time      49.6 μs <
+
+ Memory estimate: 48 bytes, allocs estimate: 1.
+```
+"""
+function taylor_green_sq(t::𝕋, ρ::Array{𝕋, 2}, 𝑢::Array{𝕋, 2}, 𝑣::Array{𝕋, 2}, NX::𝕀;
+                         pro::NamedTuple)::Nothing where {𝕋, 𝕀}
+    for j in axes(ρ, 2)
+        for i in axes(ρ, 1)
+            ρ[i, j], 𝑢[i, j], 𝑣[i, j] = taylor_green_sq(t, i, j, NX; pro...)
+        end
+    end
 end
 
 
