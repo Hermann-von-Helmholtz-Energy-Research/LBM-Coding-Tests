@@ -31,13 +31,13 @@ BenchmarkTools.Trial: 10000 samples with 949 evaluations.
 ```
 """
 function init(_::Type{𝕋}, l::Int)::NamedTuple where 𝕋<:AbstractFloat
-    𝕀       = 𝕋 == Float64 ? Int64 : Int32
-    scale   = 𝕀(1) << l
-    chunk   = 𝕀(32)
-    maxIt   = 𝕀(204800)
-    NY = NX = scale * chunk
-    nu      = 𝕋(1.0/6.0)
-    w0, w1, w2 = 𝕋(4.0/9.0), 𝕋(1.0/9.0), 𝕋(1.0/36.0)
+    𝕀           = 𝕋 == Float64 ? Int64 : Int32
+    scale       = 𝕀(1) << l
+    chunk       = 𝕀(32)
+    maxIt       = 𝕀(204800)
+    NY = NX     = scale * chunk
+    nu          = 𝕋(1.0/6.0)
+    w0, w1, w2  = 𝕋(4.0/9.0), 𝕋(1.0/9.0), 𝕋(1.0/36.0)
     return (
         typ=(i=𝕀, f=𝕋),
         cas=(sca=scale, NX=NX, NY=NY, IT=𝕀(round(maxIt / scale / scale))),
@@ -57,15 +57,15 @@ end
 """
 ```
 taylor_green(t::𝕋, x::𝕀, y::𝕀;
-             cas::Dict{Symbol, 𝕀},
-             pro::Dict{Symbol, 𝕋})::NTuple{3, 𝕋} where {𝕋, 𝕀}```\n
+             cas::NamedTuple,
+             pro::NamedTuple)::NTuple{3, 𝕋} where {𝕋, 𝕀}```\n
 Function to compute the exact solution for Taylor-Green vortex decay.
 
 ```julia-REPL
 julia> using BenchmarkTools
 julia> include("./11-ORIG-julia-BaseVector.jl");
 julia> par = init(Float64, 0);
-julia> b = @benchmarkable taylor_green(par[:typ][:f](0.0), 17, 17, cas=par[:cas], pro=par[:pro])
+julia> b = @benchmarkable taylor_green(par.typ.f(0.0), 17, 17, cas=par.cas, pro=par.pro)
 julia> b.params.evals = 1000;
 julia> b.params.seconds = 25.0;
 julia> run(b)
@@ -82,17 +82,17 @@ BenchmarkTools.Trial: 10000 samples with 1000 evaluations.
 ```
 """
 function taylor_green(t::𝕋, x::𝕀, y::𝕀;
-                      cas::Dict{Symbol, 𝕀},
-                      pro::Dict{Symbol, 𝕋})::NTuple{3, 𝕋} where {𝕋, 𝕀}
-    𝐍𝐱  = cas[:NX]
-    𝐍𝐲  = cas[:NY]
-    ϱ   = pro[:ρ₀]
+                      cas::NamedTuple{(:sca, :NX, :NY, :IT)},
+                      pro::NamedTuple{(:ν, :τ, :u_max, :ρ₀)})::NTuple{3, 𝕋} where {𝕋, 𝕀}
+    𝐍𝐱  = cas.NX
+    𝐍𝐲  = cas.NY
+    ϱ   = pro.ρ₀
     𝟐   = 𝕋(2.0)
     𝟐𝛑  = 𝟐 * π
     kx  = 𝟐𝛑 / 𝐍𝐱       # promote_type(UInt32, Float##) -> Float##
     ky  = 𝟐𝛑 / 𝐍𝐲
-    td  = pro[:ν] * (kx*kx + ky*ky)
-    𝐔𝐞  = pro[:u_max] * exp(-t * td)
+    td  = pro.ν * (kx*kx + ky*ky)
+    𝐔𝐞  = pro.u_max * exp(-t * td)
     X   = x - 𝐍𝐱 / 𝟐    # Centered vortex
     Y   = y - 𝐍𝐲 / 𝟐    # Centered vortex
     sx, cx  = sincos(kx * X)
