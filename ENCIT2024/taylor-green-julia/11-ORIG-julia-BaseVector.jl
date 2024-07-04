@@ -65,44 +65,31 @@ Function to compute the exact solution for Taylor-Green vortex decay.
 julia> using BenchmarkTools
 julia> include("./11-ORIG-julia-BaseVector.jl");
 julia> par = init(Float64, 0);
-julia> b = @benchmarkable taylor_green(par.typ.f(0.0), 17, 17, cas=par.cas, pro=par.pro)
+julia> b = @benchmarkable taylor_green(par.typ.f(0.0), 17, 17; par.cas..., par.pro...)
 julia> b.params.evals = 1000;
 julia> b.params.seconds = 25.0;
 julia> run(b)
-BenchmarkTools.Trial: 10000 samples with 1000 evaluations.
- Range (min … max):  402.291 ns …  5.000 μs  ┊ GC (min … max): 0.00% … 90.38%
- Time  (median):     406.224 ns (↓)          ┊ GC (median):    0.00%
- Time  (mean ± σ):   408.774 ns ± 61.312 ns  ┊ GC (mean ± σ):  0.42% ±  2.68%
-        ↓
-       █▇    
-  ▂▂▃▅▆██▃▃▃▂▂▂▂▁▂▁▂▂▂▂▂▂▂▂▁▂▂▁▁▁▁▂▂▁▂▂▂▂▂▁▂▁▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂ ▂
-  402 ns          Histogram: frequency by time          442 ns <
-
- Memory estimate: 96 bytes, allocs estimate: 3.
 ```
 """
 function taylor_green(t::𝕋, x::𝕀, y::𝕀;
-                      cas::NamedTuple{(:sca, :NX, :NY, :IT)},
-                      pro::NamedTuple{(:ν, :τ, :u_max, :ρ₀)})::NTuple{3, 𝕋} where {𝕋, 𝕀}
-    𝐍𝐱  = cas.NX
-    𝐍𝐲  = cas.NY
-    ϱ   = pro.ρ₀
+                      sca::𝕀, NX::𝕀, NY::𝕀, IT::𝕀,
+                      ν::𝕋, τ::𝕋, u_max::𝕋, ρ₀::𝕋)::NTuple{3, 𝕋} where {𝕋, 𝕀}
     𝟐   = 𝕋(2.0)
     𝟐𝛑  = 𝟐 * π
-    kx  = 𝟐𝛑 / 𝐍𝐱       # promote_type(UInt32, Float##) -> Float##
-    ky  = 𝟐𝛑 / 𝐍𝐲
-    td  = pro.ν * (kx*kx + ky*ky)
-    𝐔𝐞  = pro.u_max * exp(-t * td)
-    X   = x - 𝐍𝐱 / 𝟐    # Centered vortex
-    Y   = y - 𝐍𝐲 / 𝟐    # Centered vortex
+    kx  = 𝟐𝛑 / NX       # promote_type(UInt32, Float##) -> Float##
+    ky  = 𝟐𝛑 / NY
+    td  = ν * (kx*kx + ky*ky)
+    𝐔𝐞  = u_max * exp(-t * td)
+    X   = x - NX / 𝟐    # Centered vortex
+    Y   = y - NY / 𝟐    # Centered vortex
     sx, cx  = sincos(kx * X)
     sy, cy  = sincos(ky * Y)
     c2x = cx * cx - sx * sx
     c2y = cy * cy - sy * sy
     𝚞   = - 𝐔𝐞 * √(ky / kx) * cx * sy
     𝚟   = + 𝐔𝐞 * √(kx / ky) * sx * cy
-    P   = - 𝕋(0.25) * ϱ * 𝐔𝐞 * 𝐔𝐞 * ((ky / kx) * c2x + (kx / ky) * c2y)
-    ρ   = ϱ + 𝕋(3.0) * P
+    P   = - 𝕋(0.25) * ρ₀ * 𝐔𝐞 * 𝐔𝐞 * ((ky / kx) * c2x + (kx / ky) * c2y)
+    ρ   = ρ₀ + 𝕋(3.0) * P
     return ρ, 𝚞, 𝚟
 end
 
