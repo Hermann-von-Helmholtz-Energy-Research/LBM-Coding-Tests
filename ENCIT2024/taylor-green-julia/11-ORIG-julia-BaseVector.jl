@@ -442,6 +442,65 @@ function stream(𝑓::Array{𝕋, 3}, 𝑔::Array{𝕋, 3},
 end
 
 
+#----------------------------------------------------------------------------------------------#
+#                                   Lattice Velocity Moments                                   #
+#----------------------------------------------------------------------------------------------#
+
+"""
+```
+function ρ𝐮(𝑓::Array{𝕋, 3}, ρ::Array{𝕋, 2}, 𝑢::Array{𝕋, 2}, 𝑣::Array{𝕋, 2},
+            vec::NamedTuple)::Nothing where 𝕋
+```
+Function that computes lower lattice velocity moments
+```
+> include("./11-ORIG-julia-BaseVector.jl");
+> using BenchmarkTools
+> par = init(Float64, 0);
+> 𝕀, 𝕋 = par.typ;
+> NX, NY = par.cas;
+> f = Array{𝕋, 3}(undef, NX, NY, par.lat.int.vel);
+> g = Array{𝕋, 3}(undef, NX, NY, par.lat.int.vel);
+> ρ = Array{𝕋, 2}(undef, NX, NY);
+> 𝑢 = Array{𝕋, 2}(undef, NX, NY);
+> 𝑣 = Array{𝕋, 2}(undef, NX, NY);
+> taylor_green(zero(𝕋), ρ, 𝑢, 𝑣, par.pro)
+> init_equilibrium(f, ρ, 𝑢, 𝑣, par.lat.vec);
+> stream(f, g, par.lat.vec, par.typ.i)
+> @benchmark ρ𝐮(f, ρ, 𝑢, 𝑣, par.lat.vec)
+BenchmarkTools.Trial: 10000 samples with 1 evaluation.
+ Range (min … max):  11.503 μs …  57.988 μs  ┊ GC (min … max): 0.00% … 0.00%
+ Time  (median):     11.593 μs (↓)           ┊ GC (median):    0.00%
+ Time  (mean ± σ):   11.656 μs ± 895.122 ns  ┊ GC (mean ± σ):  0.00% ± 0.00%
+          ↓
+       ▄▇█▄▁                                                    
+  ▁▁▂▄███████▇▅▄▃▂▂▂▂▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁ ▂
+  11.5 μs         Histogram: frequency by time         12.2 μs <
+
+ Memory estimate: 304 bytes, allocs estimate: 4.
+```
+"""
+function ρ𝐮(𝑓::Array{𝕋, 3}, ρ::Array{𝕋, 2}, 𝑢::Array{𝕋, 2}, 𝑣::Array{𝕋, 2},
+            vec::NamedTuple)::Nothing where 𝕋
+    w, ξx, ξy = vec
+    for 𝑦 in axes(𝑓, 2)
+        for 𝑥 in axes(𝑓, 1)
+            # Initialize
+            ϱ = 𝚞 = 𝚟 = zero(𝕋)                     # (OP1)
+            # Integrate
+            for 𝑖 in axes(𝑓, 3)
+                ϱ += 𝚏 = 𝑓[𝑥, 𝑦, 𝑖]     # 0-th moment
+                𝚞 += ξx[𝑖] * 𝚏          # 1-st moment
+                𝚟 += ξy[𝑖] * 𝚏          # 1-st moment
+            end
+            # Update
+            ρ[𝑥, 𝑦], 𝑢[𝑥, 𝑦], 𝑣[𝑥, 𝑦] = ϱ, 𝚞, 𝚟     # (OP1)
+        end
+    end
+end
+
+# As disctionary benchmarks cesse to produce significant gains (and a greater loss), there's no
+# dictionary version coming out too soon.
+
 
 
 
