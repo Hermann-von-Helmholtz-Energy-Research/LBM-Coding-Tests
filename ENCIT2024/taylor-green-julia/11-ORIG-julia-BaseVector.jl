@@ -508,13 +508,29 @@ end
 
 """
 ```
-function collide(𝑓::Array{𝕋, 3}, ρ::Vector{𝕋, 2}, 𝑢::Vector{𝕋, 2}, 𝑣::Vector{𝕋, 2},
+function collide(𝑓::Array{𝕋, 3}, ρ::Array{𝕋, 2}, 𝑢::Array{𝕋, 2}, 𝑣::Array{𝕋, 2},
                  pro::NamedTuple, vec::NamedTuple)::Nothing where 𝕋
 ```
 Function that performs the collision operation on the particle populations using pre-computed
 density and velocity values.
+```
+> include("./11-ORIG-julia-BaseVector.jl");
+> using BenchmarkTools
+> par = init(Float64, 0);
+> 𝕀, 𝕋 = par.typ;
+> NX, NY = par.cas;
+> f = Array{𝕋, 3}(undef, NX, NY, par.lat.int.vel);
+> g = Array{𝕋, 3}(undef, NX, NY, par.lat.int.vel);
+> ρ = Array{𝕋, 2}(undef, NX, NY);
+> 𝑢 = Array{𝕋, 2}(undef, NX, NY);
+> 𝑣 = Array{𝕋, 2}(undef, NX, NY);
+> taylor_green(zero(𝕋), ρ, 𝑢, 𝑣, par.pro)
+> init_equilibrium(f, ρ, 𝑢, 𝑣, par.lat.vec);
+> stream(f, g, par.lat.vec, par.typ.i)
+> @benchmark collide(f, ρ, 𝑢, 𝑣, par.pro, par.lat.vec)
+```
 """
-function collide(𝑓::Array{𝕋, 3}, ρ::Vector{𝕋, 2}, 𝑢::Vector{𝕋, 2}, 𝑣::Vector{𝕋, 2},
+function collide(𝑓::Array{𝕋, 3}, ρ::Array{𝕋, 2}, 𝑢::Array{𝕋, 2}, 𝑣::Array{𝕋, 2},
                  pro::NamedTuple, vec::NamedTuple)::Nothing where 𝕋
     ν, τ, u_max, ρ₀ = pro
     w, ξx, ξy = vec
