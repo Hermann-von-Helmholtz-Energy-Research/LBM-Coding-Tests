@@ -528,6 +528,16 @@ density and velocity values.
 > init_equilibrium(f, ρ, 𝑢, 𝑣, par.lat.vec);
 > stream(f, g, par.lat.vec, par.typ.i)
 > @benchmark collide(f, ρ, 𝑢, 𝑣, par.pro, par.lat.vec)
+BenchmarkTools.Trial: 10000 samples with 1 evaluation.
+ Range (min … max):  24.138 μs … 71.801 μs  ┊ GC (min … max): 0.00% … 0.00%
+ Time  (median):     24.314 μs (↓)          ┊ GC (median):    0.00%
+ Time  (mean ± σ):   24.392 μs ±  1.003 μs  ┊ GC (mean ± σ):  0.00% ± 0.00%
+             ↓
+         ▃▆█▇▇▅▃▁                                              
+  ▁▁▁▂▃▅██████████▆▅▃▃▂▂▂▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁ ▂
+  24.1 μs         Histogram: frequency by time        25.1 μs <
+
+ Memory estimate: 496 bytes, allocs estimate: 6.
 ```
 """
 function collide(𝑓::Array{𝕋, 3}, ρ::Array{𝕋, 2}, 𝑢::Array{𝕋, 2}, 𝑣::Array{𝕋, 2},
