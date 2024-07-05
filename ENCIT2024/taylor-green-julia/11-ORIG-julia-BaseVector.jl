@@ -502,5 +502,46 @@ end
 # dictionary version coming out too soon.
 
 
+#----------------------------------------------------------------------------------------------#
+#                                          Collisions                                          #
+#----------------------------------------------------------------------------------------------#
+
+"""
+```
+function collide(𝑓::Array{𝕋, 3}, ρ::Vector{𝕋, 2}, 𝑢::Vector{𝕋, 2}, 𝑣::Vector{𝕋, 2},
+                 pro::NamedTuple, vec::NamedTuple)::Nothing where 𝕋
+```
+Function that performs the collision operation on the particle populations using pre-computed
+density and velocity values.
+"""
+function collide(𝑓::Array{𝕋, 3}, ρ::Vector{𝕋, 2}, 𝑢::Vector{𝕋, 2}, 𝑣::Vector{𝕋, 2},
+                 pro::NamedTuple, vec::NamedTuple)::Nothing where 𝕋
+    ν, τ, u_max, ρ₀ = pro
+    w, ξx, ξy = vec
+    iτ = inv(τ)             # inverse
+    cτ = one(𝕋) - iτ        # complement
+    for 𝑦 in axes(𝑓, 2)
+        for 𝑥 in axes(𝑓, 1)
+            # Initialize
+            ϱ, 𝚞, 𝚟 = ρ[𝑥, 𝑦], 𝑢[𝑥, 𝑦], 𝑣[𝑥, 𝑦]     # (OP1)
+            𝘂𝘂 = 𝚞 * 𝚞 + 𝚟 * 𝚟                      # (OP1)
+            for 𝑖 in axes(𝑓, 3)
+                ξ𝘂 = 𝕋(ξx[𝑖] * 𝚞 + ξy[𝑖] * 𝚟)
+                # Equilibrium
+                𝑓eq = w[𝑖] * ϱ * (
+                    + 𝕋(1.0)
+                    + 𝕋(3.0) * ξ𝘂
+                    + 𝕋(4.5) * ξ𝘂 * ξ𝘂
+                    - 𝕋(1.5) * 𝘂𝘂
+                )
+                # Relax to equilibrium
+                𝑓[𝑥, 𝑦, 𝑖] = cτ * 𝑓[𝑥, 𝑦, 𝑖] + iτ * 𝑓eq
+            end
+        end
+    end
+end
+
+
+
 
 
