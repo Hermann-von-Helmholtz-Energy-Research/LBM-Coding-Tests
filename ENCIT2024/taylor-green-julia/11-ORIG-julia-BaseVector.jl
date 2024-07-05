@@ -241,40 +241,41 @@ end
 
 """
 ```
-init_equilibrium(𝑓::Array{𝕋, 3}, ρ::Array{𝕋, 2}, 𝑢::Array{𝕋, 2}, 𝑣::Array{𝕋, 2};
-                 latvec::Dict{Symbol, Vector{𝕋}})::Nothing where 𝕋
-```\n
+init_equilibrium(𝑓::Array{𝕋, 3}, ρ::Array{𝕋, 2}, 𝑢::Array{𝕋, 2}, 𝑣::Array{𝕋, 2},
+                 w::Vector{𝕋}, ξx::Vector{𝕋}, ξy::Vector{𝕋})::Nothing where 𝕋
+```
 Function to initialise an equilibrium particle population `f` with provided `ρ, 𝑢, 𝑣`
 macroscopic fields.
 
-```julia-REPL
-julia> using BenchmarkTools, Unitful
-julia> include("./11-ORIG-julia-BaseVector.jl");
-julia> par = init(Float64, 0);
-julia> f = Array{par[:typ][:p], 3}(undef, (par[:cas][:NX], par[:cas][:NY], par[:lat][:int][:vel]));
-julia> ρ = Array{par[:typ][:p], 2}(undef, (par[:cas][:NX], par[:cas][:NY]));
-julia> 𝑢 = Array{par[:typ][:p], 2}(undef, (par[:cas][:NX], par[:cas][:NY]));
-julia> 𝑣 = Array{par[:typ][:p], 2}(undef, (par[:cas][:NX], par[:cas][:NY]));
-julia> 𝑏 = @benchmarkable init_equilibrium(f, ρ, 𝑢, 𝑣, latvec = par[:lat][:vec]);
-julia> tune!(𝑏);
-julia> run(𝑏)
+```
+> include("./11-ORIG-julia-BaseVector.jl");
+> using BenchmarkTools
+> par = init(Float64, 0);
+> 𝕀, 𝕋 = par.typ; t = 𝕋(0.0);
+> sca, NX, NY, IT = par.cas; pro = par.pro;
+> f = Array{𝕋, 3}(undef, NX, NY, par.lat.int.vel);
+> ρ = Array{𝕋, 2}(undef, NX, NY);
+> 𝑢 = Array{𝕋, 2}(undef, NX, NY);
+> 𝑣 = Array{𝕋, 2}(undef, NX, NY);
+> taylor_green(t, ρ, 𝑢, 𝑣, NX, NY; pro=pro)
+> vec = par.lat.vec
+> 𝐃 = @benchmarkable init_equilibrium(f, ρ, 𝑢, 𝑣, par.lat.vec...);
+> tune!(𝐃);
+> run(𝐃)
 BenchmarkTools.Trial: 10000 samples with 1 evaluation.
- Range (min … max):  19.106 μs …  74.016 μs  ┊ GC (min … max): 0.00% … 0.00%
- Time  (median):     19.448 μs (↓)           ┊ GC (median):    0.00%
- Time  (mean ± σ):   19.489 μs ± 897.990 ns  ┊ GC (mean ± σ):  0.00% ± 0.00%
-                                ↓
-                     ▁▁▃▄▅▅▅▇▆▇▇▆▇▇█▆▄▃▅▂▁                      
-  ▁▁▁▁▁▁▂▂▂▂▃▃▄▄▆▅▇▆████████████████████████▆▆▆▅▅▄▄▃▃▂▂▂▂▂▂▁▁▁ ▄
-  19.1 μs         Histogram: frequency by time         19.8 μs <
+ Range (min … max):  23.356 μs …  60.150 μs  ┊ GC (min … max): 0.00% … 0.00%
+ Time  (median):     23.800 μs (↓)           ┊ GC (median):    0.00%
+ Time  (mean ± σ):   23.842 μs ± 705.056 ns  ┊ GC (mean ± σ):  0.00% ± 0.00%
+                           ↓
+                   ▁▃▄▅▆▆▇█▇▆▆▅▃▂▁
+  ▂▁▁▂▂▂▂▂▃▃▃▄▄▅▆▇█████████████████▇▆▅▄▄▃▃▃▃▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂ ▄
+  23.4 μs         Histogram: frequency by time         24.4 μs <
 
- Memory estimate: 32 bytes, allocs estimate: 2.
+ Memory estimate: 352 bytes, allocs estimate: 5.
 ```
 """
-function init_equilibrium(𝑓::Array{𝕋, 3}, ρ::Array{𝕋, 2}, 𝑢::Array{𝕋, 2}, 𝑣::Array{𝕋, 2};
-                          latvec::Dict{Symbol, Vector{𝕋}})::Nothing where 𝕋
-    ξx  = latvec[:ξx]
-    ξy  = latvec[:ξy]
-    w   = latvec[:w]
+function init_equilibrium(𝑓::Array{𝕋, 3}, ρ::Array{𝕋, 2}, 𝑢::Array{𝕋, 2}, 𝑣::Array{𝕋, 2},
+                          w::Vector{𝕋}, ξx::Vector{𝕋}, ξy::Vector{𝕋})::Nothing where 𝕋
     for 𝑦 in axes(𝑓, 2)
         for 𝑥 in axes(𝑓, 1)
             ϱ, 𝚞, 𝚟 = ρ[𝑥, 𝑦], 𝑢[𝑥, 𝑦], 𝑣[𝑥, 𝑦]
@@ -291,5 +292,58 @@ function init_equilibrium(𝑓::Array{𝕋, 3}, ρ::Array{𝕋, 2}, 𝑢::Array{
         end
     end
 end
+
+"""
+```
+init_equilibrium(𝑓::Array{𝕋, 3}, ρ::Array{𝕋, 2}, 𝑢::Array{𝕋, 2}, 𝑣::Array{𝕋, 2};
+                 latvec::Dict{Symbol, Vector{𝕋}})::Nothing where 𝕋
+```
+Function to initialise an equilibrium particle population `f` with provided `ρ, 𝑢, 𝑣`
+macroscopic fields.
+
+```
+[...]
+> 𝐄 = @benchmarkable init_equilibrium(f, ρ, 𝑢, 𝑣; latvec=Dict(pairs(par.lat.vec)));
+> tune!(𝐄);
+> run(𝐄)
+BenchmarkTools.Trial: 10000 samples with 1 evaluation.
+ Range (min … max):  19.965 μs …  75.489 μs  ┊ GC (min … max): 0.00% … 0.00%
+ Time  (median):     20.410 μs (↓)           ┊ GC (median):    0.00%
+ Time  (mean ± σ):   20.485 μs ± 997.724 ns  ┊ GC (mean ± σ):  0.00% ± 0.00%
+                        ↓
+               ▁▃▄▅▆▇▇▇█▇▆▆▄▃▂▁
+  ▁▁▁▁▂▂▂▃▄▄▅▇██████████████████▆▆▅▅▅▄▄▃▃▃▃▃▃▃▃▃▂▂▂▂▂▂▂▁▁▁▁▁▁▁ ▄
+  20 μs           Histogram: frequency by time         21.2 μs <
+
+ Memory estimate: 912 bytes, allocs estimate: 11.
+```
+"""
+function init_equilibrium(𝑓::Array{𝕋, 3}, ρ::Array{𝕋, 2}, 𝑢::Array{𝕋, 2}, 𝑣::Array{𝕋, 2};
+                          latvec::Dict{Symbol, Vector{𝕋}})::Nothing where 𝕋
+    ξx = latvec[:ξx]
+    ξy = latvec[:ξy]
+    w  = latvec[:w]
+    for 𝑦 in axes(𝑓, 2)
+        for 𝑥 in axes(𝑓, 1)
+            ϱ, 𝚞, 𝚟 = ρ[𝑥, 𝑦], 𝑢[𝑥, 𝑦], 𝑣[𝑥, 𝑦]
+            𝘂𝘂 = 𝚞 * 𝚞 + 𝚟 * 𝚟                      # OP1
+            for 𝑖 in axes(𝑓, 3)
+                ξ𝘂 = ξx[𝑖] * 𝚞 + ξy[𝑖] * 𝚟
+                𝑓[𝑥, 𝑦, 𝑖] = w[𝑖] * ϱ * (
+                    + 𝕋(1.0)
+                    + 𝕋(3.0) * ξ𝘂
+                    + 𝕋(4.5) * ξ𝘂 * ξ𝘂
+                    - 𝕋(1.5) * 𝘂𝘂
+                )
+            end
+        end
+    end
+end
+
+# Note: To me, it makes absolutely NO SENSE on why the second impl of init_equilibrium(), with
+# two extra function calls, namely, (i) Dict() and (ii) pairs(), and three extra variable
+# assignments, namely, (a) ξx, (b) ξy, and (c) w; can be FASTER than the first implementation of
+# it, which is based on NamedTuples, which have been measured 100's of times faster than Dict()
+# to generate... really puzzled here!
 
 
