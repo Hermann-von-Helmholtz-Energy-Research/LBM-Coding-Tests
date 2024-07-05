@@ -36,7 +36,7 @@ function init(_::Type{𝕋}, l::Int)::NamedTuple where 𝕋<:AbstractFloat
     𝕀           = 𝕋 == Float64 ? Int64 : Int32
     scale       = 𝕀(1) << l
     chunk       = 𝕀(32)
-    maxIt       = 𝕀(204800)
+    maxIt       = 𝕀( 51200)
     NY = NX     = scale * chunk
     nu          = 𝕋(1.0/6.0)
     w0, w1, w2  = 𝕋(4.0/9.0), 𝕋(1.0/9.0), 𝕋(1.0/36.0)
@@ -567,6 +567,54 @@ function collide(𝑓::Array{𝕋, 3}, ρ::Array{𝕋, 2}, 𝑢::Array{𝕋, 2},
     end
 end
 
+
+#----------------------------------------------------------------------------------------------#
+#                                             Main                                             #
+#----------------------------------------------------------------------------------------------#
+
+# using Format
+
+function main(_::Type{𝕋}, l::Int)::Int where 𝕋 <: AbstractFloat
+    # Simulation Initialization
+    par = init(Float64, 0);
+    NX, NY = par.cas;
+    NL     = par.lat.int.vel;
+    # Allocate memory, without initialization
+    f = Array{𝕋, 3}(undef, NX, NY, NL);
+    g = Array{𝕋, 3}(undef, NX, NY, NL);
+    ρ = Array{𝕋, 2}(undef, NX, NY);
+    𝑢 = Array{𝕋, 2}(undef, NX, NY);
+    𝑣 = Array{𝕋, 2}(undef, NX, NY);
+    # Initialize ρ, 𝑢, 𝑣 with macroscopic flow
+    taylor_green(zero(𝕋), ρ, 𝑢, 𝑣, par.pro)
+    # Initialize 𝑓 at equilibrium
+    init_equilibrium(f, ρ, 𝑢, 𝑣, par.lat.vec);
+    # Main loop
+    for n in Base.OneTo(par.sup.IT)
+        # Stream
+        stream(f, g, par.lat.vec, par.typ.i)
+        # Velocity Moments
+        ρ𝐮(g, ρ, 𝑢, 𝑣, par.lat.vec)
+        # Collide
+        collide(g, ρ, 𝑢, 𝑣, par.pro, par.lat.vec)
+        # (f, g) swapping
+        f, g = g, f
+        # PROGRESS
+        # if (n % 128 == 0) || (n == NSTEPS)
+        #     if (n % 8192 == 0) || (n == NSTEPS)
+        #         println(format(" ({1:6d}: {2:5.1f}%)", n, 𝕋(100n)/𝕋(NSTEPS)))
+        #     else
+        #         print(".")
+        #     end
+        # end 
+    end
+    #--------------------------------------------------------------------------#
+    #    Memory de-allocation is automatically performed by julia's garbage    #
+    #        collector when the f, g, ρ, 𝑢, 𝑣 Vectors are out of scope.        #
+    #--------------------------------------------------------------------------#
+    # Return
+    return 0
+end
 
 
 
