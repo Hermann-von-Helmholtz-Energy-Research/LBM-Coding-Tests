@@ -87,13 +87,14 @@ BenchmarkTools.Trial: 10000 samples with 1000 evaluations.
 function taylor_green(t::𝕋, x::𝕀, y::𝕀, NX::𝕀, NY::𝕀;
                       ν::𝕋, τ::𝕋, u_max::𝕋, ρ₀::𝕋)::NTuple{3, 𝕋} where {𝕋, 𝕀}
     𝟐   = 𝕋(2.0)
+    𝟐⁻¹ = inv(𝟐)
     𝟐𝛑  = 𝟐 * π
     kx  = 𝟐𝛑 / NX       # promote_type(UInt32, Float##) -> Float##
     ky  = 𝟐𝛑 / NY
     td  = ν * (kx*kx + ky*ky)
     𝐔𝐞  = u_max * exp(-t * td)
-    X   = x - NX / 𝟐    # Centered vortex
-    Y   = y - NY / 𝟐    # Centered vortex
+    X   = x + 𝟐⁻¹
+    Y   = y + 𝟐⁻¹
     sx, cx  = sincos(kx * X)
     sy, cy  = sincos(ky * Y)
     c2x = cx * cx - sx * sx
@@ -176,12 +177,13 @@ BenchmarkTools.Trial: 10000 samples with 1000 evaluations.
 function taylor_green_sq(t::𝕋, x::𝕀, y::𝕀, NX::𝕀;
                          ν::𝕋, τ::𝕋, u_max::𝕋, ρ₀::𝕋)::NTuple{3, 𝕋} where {𝕋, 𝕀}
     𝟐   = 𝕋(2.0)
+    𝟐⁻¹ = inv(𝟐)
     𝟐𝛑  = 𝟐 * π
     k   = 𝟐𝛑 / NX       # promote_type(UInt32, Float##) -> Float##
     td  = ν * (k*k + k*k)
     𝐔𝐞  = u_max * exp(-t * td)
-    X   = x - NX / 𝟐    # Centered vortex
-    Y   = y - NX / 𝟐    # Centered vortex
+    X   = x + 𝟐⁻¹
+    Y   = y + 𝟐⁻¹
     sx, cx  = sincos(k * X)
     sy, cy  = sincos(k * Y)
     c2x = cx * cx - sx * sx
@@ -208,9 +210,9 @@ Function to compute the exact solution for Taylor-Green vortex in square FIELDS 
 > ρ = Array{Float64, 2}(undef, 32, 32);
 > 𝑢 = Array{Float64, 2}(undef, 32, 32);
 > 𝑣 = Array{Float64, 2}(undef, 32, 32);
-> B = @benchmarkable taylor_green_sq(t, ρ, 𝑢, 𝑣, NX; pro=\$pro)
-> tune!(B)
-> run(B)
+> 𝐵 = @benchmarkable taylor_green_sq(t, ρ, 𝑢, 𝑣, NX; pro=\$pro)
+> tune!(𝐵)
+> run(𝐵)
 BenchmarkTools.Trial: 10000 samples with 1 evaluation.
  Range (min … max):  34.185 μs … 79.878 μs  ┊ GC (min … max): 0.00% … 0.00%
  Time  (median):     34.293 μs (↓)          ┊ GC (median):    0.00%
