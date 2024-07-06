@@ -36,7 +36,7 @@ function init(_::Type{𝕋}, l::Int)::NamedTuple where 𝕋<:AbstractFloat
     𝕀           = 𝕋 == Float64 ? Int64 : Int32
     scale       = 𝕀(1) << l
     chunk       = 𝕀(32)
-    maxIt       = 𝕀( 51200)
+    maxIt       = 𝕀(  6400)
     NY = NX     = scale * chunk
     nu          = 𝕋(1.0/6.0)
     w0, w1, w2  = 𝕋(4.0/9.0), 𝕋(1.0/9.0), 𝕋(1.0/36.0)
