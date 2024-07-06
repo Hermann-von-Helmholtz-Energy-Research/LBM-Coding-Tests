@@ -138,7 +138,12 @@ void collide(double *f, double *r, double *u, double *v) {
     }
 }
 
+// Measuring Performance
+double start = seconds();
 
+// take NSTEPS simuation time steps
+for(int n = 0; n < NSTEPS; ++n)
+{
 /* Main */
 int main (int argc, char* argv[]){
     /* allocate memory */
@@ -178,4 +183,16 @@ int main (int argc, char* argv[]){
     /* return */
     return 0;
 }
+}
 
+double end = seconds ();
+double runtime = end-start;
+
+size_t nodes_updated = NSTEPS*size_t (NX*NY);
+
+// calculate speed in million lattice updates per second
+double speed = nodes_updated / (le6*runtime);
+
+// calculate memory access rate in GiB/s
+double bytesPerGiB = 1024.0 * 1024.0 * 1024.0;
+double bandwidth = nodes_updated * (2 * ndir) * sizeof(double) / (runtime * bytesPerGiB);
